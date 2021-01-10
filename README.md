@@ -1,0 +1,19 @@
+## Baseline for pointcloud extrapolation
+
+
+### Usage
+
+#### 1) Envrionment & prerequisites
+
+- Pytorch 1.6.0
+- CUDA 10.1
+- Python 3.7
+- chamfer_distance
+
+#### 2) Compile
+
+Create singularity image from the recipe 
+
+#### 3) Train or validate
+
+Run `python3 val.py` to validate the model or `python3 train.py` to train the model from scratch.
