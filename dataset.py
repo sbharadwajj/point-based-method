@@ -49,34 +49,57 @@ class Kitti360(data.Dataset):
                 self.X_val = X_val
                 # assert((self.X == self.Y).all())
             self.len = len(self.X_val)
-
         self.npoints = npoints
         self.train = train
-
+        self.pose = '/home/bharadwaj/implementations/DATA/poses.txt'
+        self.pose_matrix = np.loadtxt(self.pose)
 
 
     def __getitem__(self, index):
-        # index = 1 #TRAIN ON SAME DATA
-        if self.train:
-            model_id = self.X[index]  
-        else:
-            model_id = self.X_val[index]      
-        # model_id = "9.dat"
+        # if self.train:
+        #     model_id = self.X[index]  
+        # else:
+        #     model_id = self.X_val[index]      
+        model_id = "9.dat"
+
         # print(os.path.join(self.inp, model_id))
-        # scan_id = index % 50
-        def read_pcd(filename):
+
+        def trans_vector(model_id, poses):
+            '''
+            gets poses from pose.txt for each file
+            '''
+            id = float(model_id.split('.')[0])
+            vec = np.squeeze(poses[poses[:,0] == id])
+            reshaped = vec[1:].reshape(3,4)
+            return reshaped[:,3:].astype(np.float64)
+
+        def get_center(filename):
+            '''
+            returns center
+            '''
             point_set = np.loadtxt(filename)
-            point_set = point_set - np.expand_dims(np.mean(point_set, axis = 0), 0) # center
+            center = np.expand_dims(np.mean(point_set, axis = 0), 0) # center
+            return center
+
+        def read_pcd(filename, center):
+            '''
+            reads pcd, converts to float and normalizes
+            '''
+            point_set = np.loadtxt(filename)
+            point_set = point_set - center
             dist = np.max(np.sqrt(np.sum(point_set ** 2, axis = 1)),0)
             pcd = point_set / dist #scale
             return (torch.from_numpy(np.array(pcd)).float())
         
+        center = trans_vector(model_id, self.pose_matrix).transpose()
         if self.train:
-            partial =read_pcd(os.path.join(self.inp, model_id))
-            complete = read_pcd(os.path.join(self.gt, model_id))
+            # center = get_center(os.path.join(self.inp, model_id))
+            partial =read_pcd(os.path.join(self.inp, model_id), center)
+            complete = read_pcd(os.path.join(self.gt, model_id), center)
         else:
-            partial =read_pcd(os.path.join(self.inp_val, model_id))
-            complete = read_pcd(os.path.join(self.gt_val, model_id))            
+            # center = get_center(os.path.join(self.inp_val, model_id))
+            partial =read_pcd(os.path.join(self.inp_val, model_id), center)
+            complete = read_pcd(os.path.join(self.gt_val, model_id), center)            
         return model_id, resample_pcd(partial, 1024), resample_pcd(complete, self.npoints)
 
     def __len__(self):

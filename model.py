@@ -126,6 +126,7 @@ class PointNetfeat(nn.Module):
             x = x.view(-1, 1024, 1).repeat(1, 1, n_pts)
             return torch.cat([x, pointfeat], 1), trans, trans_feat
 
+# ONLY FCN NETWORK
 class PointNetCls(nn.Module):
     def __init__(self, k=2, feature_transform=False):
         super(PointNetCls, self).__init__()
@@ -143,48 +144,74 @@ class PointNetCls(nn.Module):
         x, trans, trans_feat = self.feat(x)
         x = F.relu(self.bn1(self.fc1(x)))
         x = F.relu(self.bn2(self.dropout(self.fc2(x))))
-        x = self.fc3(x)
+        x = torch.tanh(self.fc3(x))
         x = x.view(-1, 2048, 3)
         return x, trans, trans_feat
 
 
-class PointNetDenseCls(nn.Module):
-    def __init__(self, k = 2, feature_transform=False):
-        super(PointNetDenseCls, self).__init__()
-        self.k = k
-        self.feature_transform=feature_transform
-        self.feat = PointNetfeat(global_feat=False, feature_transform=feature_transform)
-        self.conv1 = torch.nn.Conv1d(1088, 512, 1)
-        self.conv2 = torch.nn.Conv1d(512, 256, 1)
-        self.conv3 = torch.nn.Conv1d(256, 128, 1)
-        self.conv4 = torch.nn.Conv1d(128, self.k, 1)
-        self.bn1 = nn.BatchNorm1d(512)
-        self.bn2 = nn.BatchNorm1d(256)
-        self.bn3 = nn.BatchNorm1d(128)
+# WITH 1D DECONV
+class PointNetDeconvCls(nn.Module):
+    def __init__(self, k=2, feature_transform=False):
+        super(PointNetDeconvCls, self).__init__()
+        self.feature_transform = feature_transform
+        self.feat = PointNetfeat(global_feat=True, feature_transform=feature_transform)
+        self.decode = PointNetDeconvDecoder()
+        self.fc1 = nn.Linear(1024, 2048)
+        self.fc2 = nn.Linear(2048, 3072)
+        self.fc3 = nn.Linear(3072, 512*3)
+        self.dropout = nn.Dropout(p=0.3)
+        self.bn1 = nn.BatchNorm1d(2048)
+        self.bn2 = nn.BatchNorm1d(3072)
+        self.relu = nn.ReLU()
+        # self.tanh = nn.Tanh()
+
 
     def forward(self, x):
-        batchsize = x.size()[0]
-        n_pts = x.size()[2]
-        x, trans, trans_feat = self.feat(x)
-        x = F.relu(self.bn1(self.conv1(x)))
-        x = F.relu(self.bn2(self.conv2(x)))
-        x = F.relu(self.bn3(self.conv3(x)))
-        x = self.conv4(x)
-        x = x.transpose(2,1).contiguous()
-        x = F.log_softmax(x.view(-1,self.k), dim=-1)
-        x = x.view(batchsize, n_pts, self.k)
+        global_feat, trans, trans_feat = self.feat(x)
+        x_additional = F.relu(self.bn1(self.fc1(global_feat)))
+        x_additional = F.relu(self.bn2(self.dropout(self.fc2(x_additional))))
+        x_additional = torch.tanh(self.fc3(x_additional))
+        x_additional = x_additional.view(-1, 512, 3)
+        x = self.decode(global_feat.view(-1, 4, 256))
+        x = torch.cat((x_additional, x.transpose(2,1)), dim=1)
         return x, trans, trans_feat
 
-def feature_transform_regularizer(trans):
-    d = trans.size()[1]
-    batchsize = trans.size()[0]
-    I = torch.eye(d)[None, :, :]
-    if trans.is_cuda:
-        I = I.cuda()
-    loss = torch.mean(torch.norm(torch.bmm(trans, trans.transpose(2,1)) - I, dim=(1,2)))
-    return loss
+class PointNetDeconvDecoder(nn.Module):
+    def __init__(self):
+        super(PointNetDeconvDecoder, self).__init__()
+        self.convt1 = torch.nn.ConvTranspose1d(4, 64, 1)
+        self.conv1 = torch.nn.Conv1d(64, 64, 1)
+        self.convt2 = torch.nn.ConvTranspose1d(64, 128, 5, 2)
+        self.conv2 = torch.nn.Conv1d(128, 128, 1)
+        self.convt3 = torch.nn.ConvTranspose1d(128, 64, 5, 2)
+        self.conv3 = torch.nn.Conv1d(64, 64, 1)
+        self.convt4 = torch.nn.ConvTranspose1d(64, 3, 5, 2)
+        self.conv4 = torch.nn.Conv1d(3, 3, 1)
+        self.relu = nn.ReLU()
+        # self.tanh = nn.Tanh()
+
+    def forward(self, x):
+        x = self.convt1(x)
+        x = F.relu(self.conv1(x))
+        x = self.convt2(x)
+        x = F.relu(self.conv2(x))
+        x = self.convt3(x)
+        x = F.relu(self.conv3(x))
+        x = self.convt4(x)
+        x = torch.tanh(self.conv4(x))
+        return x
+
+
 
 if __name__ == '__main__':
+    data = Variable(torch.rand(8, 4, 32))
+    deconv = PointNetDeconvDecoder()
+    out = deconv(data)
+
+    data_1 = Variable(torch.rand(8, 3, 1024))
+    deconv_cls = PointNetDeconvCls()
+    out_1 = deconv_cls(data_1)
+
     sim_data = Variable(torch.rand(32,3,2500))
     trans = STN3d()
     out = trans(sim_data)

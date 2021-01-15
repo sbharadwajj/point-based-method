@@ -13,7 +13,7 @@ import json
 import time, datetime
 import visdom
 from time import time
-# from chamferdist import ChamferDistance
+from chamferdist import ChamferDistance
 sys.path.append('/home/bharadwaj/implementations/baseline1-torch')
 from chamfer_distance import ChamferDistance
 
@@ -26,6 +26,8 @@ parser.add_argument('--num_points', type=int, default = 8192,  help='number of p
 parser.add_argument('--n_primitives', type=int, default = 16,  help='number of surface elements')
 parser.add_argument('--env', type=str, default ="MSN_TRAIN"   ,  help='visdom environment')
 parser.add_argument('--cuda', type=bool, default = False   ,  help='if running on cuda')
+parser.add_argument('--fc_nw', type=bool, default = True   ,  help='running vanilla')
+parser.add_argument('--message', type=str, default = "training"   ,  help='specs of nw')
 
 opt = parser.parse_args()
 print (opt)
@@ -62,7 +64,13 @@ len_dataset = len(dataset)
 print("Train Set Size: ", len_dataset)
 
 # networks
-network = PointNetCls(feature_transform=True)
+print(opt.fc_nw)
+if opt.fc_nw:
+    network = PointNetCls(feature_transform=True)
+else:
+    print("Deconv Network")
+    network = PointNetDeconvCls()
+
 if opt.cuda:
     network.cuda()
 network.apply(weights_init) #initialization of the weight
@@ -72,7 +80,7 @@ if opt.model != '':
     print("Previous weight loaded ")
 
 # optimizer
-lrate = 0.001 #learning rate
+lrate = 0.0001 #learning rate
 optimizer = optim.Adam(network.parameters(), lr = lrate)
 
 chamferDist = ChamferDistance()
@@ -80,6 +88,7 @@ train_loss = AverageValueMeter()
 val_loss = AverageValueMeter()
 with open(logname, 'a') as f: #open and append
         f.write(str(network) + '\n')
+        f.write(opt.message)
 
 
 train_curve = []
@@ -123,38 +132,6 @@ for epoch in range(opt.nepoch):
         train_loss.update(loss_item) 
         optimizer.step() 
 
-        # if i % 10 == 0:
-        #     idx = random.randint(0, input.size()[0] - 1)
-        #     vis.scatter(X = gt.contiguous()[idx].data.cpu()[:, :3],
-        #             win = 'TRAIN_GT',
-        #             opts = dict(
-        #                 title = id[idx],
-        #                 markersize = 2,
-        #                 ),
-        #             )
-        #     vis.scatter(X = input.transpose(2,1).contiguous()[idx].data.cpu(),
-        #             win = 'TRAIN_INPUT',
-        #             opts = dict(
-        #                 title = id[idx],
-        #                 markersize = 2,
-        #                 ),
-        #             )
-        #     vis.scatter(X = output1[idx].data.cpu(),
-        #             Y = labels_generated_points[0:output1.size(1)],
-        #             win = 'TRAIN_COARSE',
-        #             opts = dict(
-        #                 title= id[idx],
-        #                 markersize=2,
-        #                 ),
-        #             )
-        #     vis.scatter(X = output2[idx].data.cpu(),
-        #             win = 'TRAIN_OUTPUT',
-        #             opts = dict(
-        #                 title= id[idx],
-        #                 markersize=2,
-        #                 ),
-        #             )
-
         print(opt.env + ' train [%d: %d/%d]  trainloss: %f' %(epoch, i, len_dataset/opt.batchSize, loss_item))
     train_curve.append(train_loss.avg)
 
@@ -183,47 +160,10 @@ for epoch in range(opt.nepoch):
                     val_loss_item = loss_net.detach().item()      
                 val_loss.update(val_loss_item) 
                 idx = random.randint(0, input.size()[0] - 1)
-                # vis.scatter(X = gt.contiguous()[idx].data.cpu()[:, :3],
-                #         win = 'VAL_GT',
-                #         opts = dict(
-                #             title = id[idx],
-                #             markersize = 2,
-                #             ),
-                #         )
-                # vis.scatter(X = input.transpose(2,1).contiguous()[idx].data.cpu(),
-                #         win = 'VAL_INPUT',
-                #         opts = dict(
-                #             title = id[idx],
-                #             markersize = 2,
-                #             ),
-                #         )
-                # vis.scatter(X = output1[idx].data.cpu(),
-                #         Y = labels_generated_points[0:output1.size(1)],
-                #         win = 'VAL_COARSE',
-                #         opts = dict(
-                #             title= id[idx],
-                #             markersize=2,
-                #             ),
-                #         )
-                # vis.scatter(X = output2[idx].data.cpu(),
-                #         win = 'VAL_OUTPUT',
-                #         opts = dict(
-                #             title= id[idx],
-                #             markersize=2,
-                #             ),
-                #         )
                 print(opt.env + ' val [%d: %d/%d]  emd1: %f' %(epoch, i, len_dataset/opt.batchSize, val_loss_item))
 
     val_curve.append(val_loss.avg)
 
-    # vis.line(X=np.column_stack((np.arange(len(train_curve)),np.arange(len(val_curve)))),
-    #              Y=np.column_stack((np.array(train_curve),np.array(val_curve))),
-    #              win='loss',
-    #              opts=dict(title="emd", legend=["train_curve" + opt.env, "val_curve" + opt.env], markersize=2, ), )
-    # vis.line(X=np.column_stack((np.arange(len(train_curve)),np.arange(len(val_curve)))),
-    #              Y=np.log(np.column_stack((np.array(train_curve),np.array(val_curve)))),
-    #              win='log',
-    #              opts=dict(title="log_emd", legend=["train_curve"+ opt.env, "val_curve"+ opt.env], markersize=2, ), )
 
     log_table = {
       "train_loss" : train_loss.avg,

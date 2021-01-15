@@ -1,0 +1,58 @@
+#header
+Bootstrap: docker
+From: pytorch/pytorch:1.6.0-cuda10.1-cudnn7-devel
+
+#Sections
+
+%help
+Singularity image of the pytorch:1.5.1-cuda10.1-cudnn7-runtime  docker container.
+OS: Ubuntu 16.04.5 LTS
+Cuda: 10.1
+Pytorch-gpu 1.5.1
+Python: 3.5
+
+%setup
+# commands ecexuted on the host system after os has been installed
+
+%files
+# copy files from the host system here
+install_chamferdist.sh
+# use de repository servers since the official ones are not working in the moment  de.archive.ubuntu.com
+
+
+%labels
+# information labels about the container  saved in /.singularity.d/labels.json
+  maintainer Maximus Mutschler <maximus.mutschler@uni-tuebingen.de>
+  Version v0.1
+# overwrite  True= to be able to build it multiple times
+  overwrite False 
+  tensorflow_gpu.version 1.13.1
+  keras.version 2.2.4
+  pytorch.version 1.0.1
+  python.version 3.5
+  opencv.version 4.1.0
+
+%environment
+# set environment variables
+
+
+
+
+%post
+#commands executed inside the container after os has been installed. Used for setup of the container
+#devine env variables for build time
+./install_chamferdist.sh
+
+
+%runscript
+# commands that are run when container's run command is used
+
+
+
+%test
+# validate setup at the end of the build process
+
+
+
+
+#/usr/lib/x86_64-linux-gnu/libcuda.so.1
