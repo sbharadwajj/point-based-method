@@ -19,35 +19,18 @@ class Kitti360(data.Dataset):
         if train:
             self.inp = '/home/bharadwaj/implementations/DATA/downsampled_inp/downsampled_train'
             self.gt = '/home/bharadwaj/implementations/DATA/downsampled_fused/downsampled_train'
-            X = np.asarray(os.listdir(self.inp))
-            Y = np.asarray(os.listdir(self.gt))
-            #ASSERT WORKS ONLY FOR SAME NAMES
-            if np.shape(X) > np.shape(Y):
-                self.X = X[np.in1d(X, Y)]
-                self.Y = Y
-                # assert((self.X == self.Y).all()) 
-            else:
-                self.Y = Y[np.in1d(Y, X)]
-                self.X = X
-                # assert((self.X == self.Y).all())
-            random.shuffle(self.X.tolist())
-            random.shuffle(self.Y.tolist())
+            self.X = ["106.dat", "22.dat", "269.dat", "370.dat", "429.dat", "555.dat", "670.dat", "750.dat", "9.dat", "182.dat"]
+            self.Y = self.X
+            random.shuffle(self.X)
+            random.shuffle(self.Y)
+
             self.len = len(self.X)
 
         else:
-            self.inp_val = '/home/bharadwaj/implementations/DATA/downsampled_inp/downsampled_predict'
-            self.gt_val = '/home/bharadwaj/implementations/DATA/downsampled_fused/downsampled_predict'
-            X_val = np.asarray(os.listdir(self.inp_val))
-            Y_val = np.asarray(os.listdir(self.gt_val))
-            #ASSERT WORKS ONLY FOR SAME NAMES
-            if np.shape(X_val) > np.shape(Y_val):
-                self.X_val = X_val[np.in1d(X_val, Y_val)]
-                self.Y_val = Y_val
-                # assert((self.X == self.Y).all()) 
-            else:
-                self.Y_val = Y_val[np.in1d(Y_val, X_val)]
-                self.X_val = X_val
-                # assert((self.X == self.Y).all())
+            self.inp_val = '/home/bharadwaj/implementations/DATA/downsampled_inp/downsampled_train'
+            self.gt_val = '/home/bharadwaj/implementations/DATA/downsampled_fused/downsampled_train'
+            self.X_val = ["106.dat", "22.dat", "269.dat", "370.dat", "429.dat", "555.dat", "670.dat", "750.dat", "9.dat", "182.dat"]
+            self.Y_val = self.X_val
             self.len = len(self.X_val)
         self.npoints = npoints
         self.train = train
@@ -55,14 +38,12 @@ class Kitti360(data.Dataset):
         self.pose_matrix = np.loadtxt(self.pose)
 
 
-    def __getitem__(self, index):
-        # if self.train:
-        #     model_id = self.X[index]  
-        # else:
-        #     model_id = self.X_val[index]      
-        model_id = "9.dat"
 
-        # print(os.path.join(self.inp, model_id))
+    def __getitem__(self, index):
+        if self.train:
+            model_id = self.X[index]  
+        else:
+            model_id = self.X_val[index]      
 
         def trans_vector(model_id, poses):
             '''
@@ -91,13 +72,13 @@ class Kitti360(data.Dataset):
             pcd = point_set / dist #scale
             return (torch.from_numpy(np.array(pcd)).float())
         
-        center = trans_vector(model_id, self.pose_matrix).transpose()
+        # center = trans_vector(model_id, self.pose_matrix).transpose()
         if self.train:
-            # center = get_center(os.path.join(self.inp, model_id))
+            center = get_center(os.path.join(self.inp, model_id))
             partial =read_pcd(os.path.join(self.inp, model_id), center)
             complete = read_pcd(os.path.join(self.gt, model_id), center)
         else:
-            # center = get_center(os.path.join(self.inp_val, model_id))
+            center = get_center(os.path.join(self.inp_val, model_id))
             partial =read_pcd(os.path.join(self.inp_val, model_id), center)
             complete = read_pcd(os.path.join(self.gt_val, model_id), center)            
         return model_id, resample_pcd(partial, 1024), resample_pcd(complete, self.npoints)

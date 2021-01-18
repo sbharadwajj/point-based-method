@@ -60,8 +60,8 @@ def read_pcd(filename):
     return torch.from_numpy(np.array(pcd)).float()
 
 # data_list = ["106.dat", "22.dat", "269.dat", "370.dat", "429.dat", "555.dat", "670.dat", "750.dat"]
-# data_list = ['808.dat', "914.dat", "996.dat", "850.dat", "956.dat"]
-data_list = ["9.dat"]
+data_list = ['808.dat', "914.dat", "996.dat", "850.dat", "956.dat"]
+# data_list = ["9.dat"]
 with torch.no_grad():
 # for i, model in enumerate(model_list):
     print(network)
@@ -85,7 +85,7 @@ with torch.no_grad():
     #     pcd = o3d.io.read_point_cloud(os.path.join(gt_dir, model + '.pcd'))
     #     gt[j, :, :] = torch.from_numpy(resample_pcd(np.array(pcd.points), opt.num_points))
     pred, _, _ = network(partial.transpose(2,1).contiguous())
-    np.savez('singlefileDiffCenter49.npz', predictions=pred.numpy(), data=partial.numpy(), gt=gt.numpy())
+    np.savez('valdataPoses49.npz', predictions=pred.numpy(), data=partial.numpy(), gt=gt.numpy())
     # dist, _ = EMD(output1, gt, 0.002, 10000)
     # emd1 = torch.sqrt(dist).mean()
     # dist, _ = EMD(output2, gt, 0.002, 10000)

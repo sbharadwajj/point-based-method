@@ -13,7 +13,7 @@ import json
 import time, datetime
 import visdom
 from time import time
-from chamferdist import ChamferDistance
+# from chamferdist import ChamferDistance
 sys.path.append('/home/bharadwaj/implementations/baseline1-torch')
 from chamfer_distance import ChamferDistance
 
