@@ -14,8 +14,8 @@ import time, datetime
 import visdom
 from time import time
 # from chamferdist import ChamferDistance
-sys.path.append('/home/bharadwaj/implementations/baseline1-torch')
-from chamfer_distance import ChamferDistance
+# sys.path.append('/home/bharadwaj/implementations/baseline1-torch')
+# from chamfer_distance import ChamferDistance
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--batchSize', type=int, default=8, help='input batch size')
@@ -83,6 +83,7 @@ if opt.model != '':
 lrate = 0.0001 #learning rate
 optimizer = optim.Adam(network.parameters(), lr = lrate)
 
+entropy = nn.CrossEntropyLoss()
 chamferDist = ChamferDistance()
 train_loss = AverageValueMeter()
 val_loss = AverageValueMeter()
@@ -113,17 +114,15 @@ for epoch in range(opt.nepoch):
         optimizer.zero_grad()
         id, input, gt = data
         input = input.float()#.cuda()
-        gt = gt.float()#.cuda()
-
+        gt = gt.squeeze()
         if opt.cuda:
             input = input.cuda()
             gt = gt.cuda()
 
         input = input.transpose(2,1).contiguous()
-        pred, _, _ = network(input)
-    
-        dist1, dist2 = chamferDist(pred, gt)
-        loss_net = (torch.mean(dist1)) + (torch.mean(dist2))
+        pred = network(input)
+
+        loss_net = entropy(pred, gt)
         loss_net.backward()
         if opt.cuda:
             loss_item = loss_net.detach().cpu().item()
@@ -143,16 +142,15 @@ for epoch in range(opt.nepoch):
             for i, data in enumerate(dataloader_test, 0):
                 id, input, gt = data
                 input = input.float()#.cuda()
-                gt = gt.float()#.cuda()
+                gt = gt.squeeze()
 
                 if opt.cuda:
                     input = input.cuda()
                     gt = gt.cuda()
 
                 input = input.transpose(2,1).contiguous()
-                pred, _, _ = network(input)    
-                dist1, dist2 = chamferDist(pred, gt)
-                loss_net = (torch.mean(dist1)) + (torch.mean(dist2)) 
+                pred = network(input)    
+                loss_net = entropy(pred, gt)
 
                 if opt.cuda:     
                     val_loss_item = loss_net.detach().cpu().item() #.cpu()    
