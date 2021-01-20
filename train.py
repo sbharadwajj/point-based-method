@@ -112,18 +112,17 @@ for epoch in range(opt.nepoch):
     for i, data in enumerate(dataloader, 0):
         optimizer.zero_grad()
         id, input, gt = data
-        input = input.float()#.cuda()
+        input = input.squeeze()
         gt = gt.float()#.cuda()
-
+        import pdb; pdb.set_trace()
         if opt.cuda:
             input = input.cuda()
             gt = gt.cuda()
 
-        input = input.transpose(2,1).contiguous()
-        pred, _, _ = network(input)
+        pred = network(input)
     
         dist1, dist2 = chamferDist(pred, gt)
-        loss_net = (torch.mean(dist1)) + (torch.mean(dist2))
+        loss_net = ((torch.mean(dist1)) + (torch.mean(dist2)))/opt.batch_size
         loss_net.backward()
         if opt.cuda:
             loss_item = loss_net.detach().cpu().item()
@@ -142,15 +141,14 @@ for epoch in range(opt.nepoch):
         with torch.no_grad():
             for i, data in enumerate(dataloader_test, 0):
                 id, input, gt = data
-                input = input.float()#.cuda()
+                input = input.squeeze()
                 gt = gt.float()#.cuda()
 
                 if opt.cuda:
                     input = input.cuda()
                     gt = gt.cuda()
 
-                input = input.transpose(2,1).contiguous()
-                pred, _, _ = network(input)    
+                pred = network(input)    
                 dist1, dist2 = chamferDist(pred, gt)
                 loss_net = (torch.mean(dist1)) + (torch.mean(dist2)) 
 

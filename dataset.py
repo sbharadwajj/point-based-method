@@ -19,19 +19,17 @@ class Kitti360(data.Dataset):
         if train:
             self.inp = '/home/bharadwaj/implementations/DATA/downsampled_inp/downsampled_train'
             self.gt = '/home/bharadwaj/implementations/DATA/downsampled_fused/downsampled_train'
-            self.X = ["106.dat", "22.dat", "269.dat", "370.dat", "429.dat", "555.dat", "670.dat", "750.dat"]
-            self.Y = self.X
-            random.shuffle(self.X)
+            self.Y = ["106.dat", "22.dat", "269.dat", "370.dat", "429.dat", "555.dat", "670.dat", "750.dat"]
+            self.X = {"106.dat":0, "22.dat":1, "269.dat":2, "370.dat":3, "429.dat":4, "555.dat":5, "670.dat":6, "750.dat":7}
             random.shuffle(self.Y)
-
-            self.len = len(self.X)
+            self.len = len(self.Y)
 
         else:
             self.inp_val = '/home/bharadwaj/implementations/DATA/downsampled_inp/downsampled_train'
             self.gt_val = '/home/bharadwaj/implementations/DATA/downsampled_fused/downsampled_train'
-            self.X_val = ["106.dat", "22.dat", "269.dat", "370.dat", "429.dat", "555.dat", "670.dat", "750.dat"]
-            self.Y_val = self.X_val
-            self.len = len(self.X_val)
+            self.Y_val = ["106.dat", "22.dat", "269.dat", "370.dat", "429.dat", "555.dat", "670.dat", "750.dat"]
+            self.X_val = {"106.dat":0, "22.dat":1, "269.dat":2, "370.dat":3, "429.dat":4, "555.dat":5, "670.dat":6, "750.dat":7}
+            self.len = len(self.Y_val)
         self.npoints = npoints
         self.train = train
         self.pose = '/home/bharadwaj/implementations/DATA/poses.txt'
@@ -41,9 +39,9 @@ class Kitti360(data.Dataset):
 
     def __getitem__(self, index):
         if self.train:
-            model_id = self.X[index]  
+            model_id = self.Y[index]  
         else:
-            model_id = self.X_val[index]      
+            model_id = self.Y_val[index]      
 
         def trans_vector(model_id, poses):
             '''
@@ -72,16 +70,20 @@ class Kitti360(data.Dataset):
             pcd = point_set / dist #scale
             return (torch.from_numpy(np.array(pcd)).float())
         
+
+        one_hot = torch.zeros(1, self.len)
         center = trans_vector(model_id, self.pose_matrix).transpose()
         if self.train:
             # center = get_center(os.path.join(self.inp, model_id))
-            partial =read_pcd(os.path.join(self.inp, model_id), center)
+            # partial =read_pcd(os.path.join(self.inp, model_id), center)
+            one_hot[torch.arange(1), self.X[model_id]] = 1
             complete = read_pcd(os.path.join(self.gt, model_id), center)
         else:
             # center = get_center(os.path.join(self.inp_val, model_id))
-            partial =read_pcd(os.path.join(self.inp_val, model_id), center)
+            # partial =read_pcd(os.path.join(self.inp_val, model_id), center)
+            one_hot[torch.arange(1), self.Y[model_id]] = 1
             complete = read_pcd(os.path.join(self.gt_val, model_id), center)            
-        return model_id, resample_pcd(partial, 1024), resample_pcd(complete, self.npoints)
+        return model_id, one_hot, resample_pcd(complete, self.npoints)
 
     def __len__(self):
         return self.len
