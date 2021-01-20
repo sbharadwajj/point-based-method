@@ -19,7 +19,7 @@ class Kitti360(data.Dataset):
         if train:
             self.inp = '/home/bharadwaj/implementations/DATA/downsampled_inp/downsampled_train'
             self.gt = '/home/bharadwaj/implementations/DATA/downsampled_fused/downsampled_train'
-            self.X = ["106.dat", "22.dat", "269.dat", "370.dat", "429.dat", "555.dat", "670.dat", "750.dat", "9.dat", "182.dat"]
+            self.X = ["106.dat", "22.dat", "269.dat", "370.dat", "429.dat", "555.dat", "670.dat", "750.dat"]
             self.Y = self.X
             random.shuffle(self.X)
             random.shuffle(self.Y)
@@ -29,7 +29,7 @@ class Kitti360(data.Dataset):
         else:
             self.inp_val = '/home/bharadwaj/implementations/DATA/downsampled_inp/downsampled_train'
             self.gt_val = '/home/bharadwaj/implementations/DATA/downsampled_fused/downsampled_train'
-            self.X_val = ["106.dat", "22.dat", "269.dat", "370.dat", "429.dat", "555.dat", "670.dat", "750.dat", "9.dat", "182.dat"]
+            self.X_val = ["106.dat", "22.dat", "269.dat", "370.dat", "429.dat", "555.dat", "670.dat", "750.dat"]
             self.Y_val = self.X_val
             self.len = len(self.X_val)
         self.npoints = npoints
@@ -72,13 +72,13 @@ class Kitti360(data.Dataset):
             pcd = point_set / dist #scale
             return (torch.from_numpy(np.array(pcd)).float())
         
-        # center = trans_vector(model_id, self.pose_matrix).transpose()
+        center = trans_vector(model_id, self.pose_matrix).transpose()
         if self.train:
-            center = get_center(os.path.join(self.inp, model_id))
+            # center = get_center(os.path.join(self.inp, model_id))
             partial =read_pcd(os.path.join(self.inp, model_id), center)
             complete = read_pcd(os.path.join(self.gt, model_id), center)
         else:
-            center = get_center(os.path.join(self.inp_val, model_id))
+            # center = get_center(os.path.join(self.inp_val, model_id))
             partial =read_pcd(os.path.join(self.inp_val, model_id), center)
             complete = read_pcd(os.path.join(self.gt_val, model_id), center)            
         return model_id, resample_pcd(partial, 1024), resample_pcd(complete, self.npoints)
