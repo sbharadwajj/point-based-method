@@ -84,7 +84,7 @@ lrate = 0.0001 #learning rate
 optimizer = optim.Adam(network.parameters(), lr = lrate)
 
 entropy = nn.CrossEntropyLoss()
-chamferDist = ChamferDistance()
+# chamferDist = ChamferDistance()
 train_loss = AverageValueMeter()
 val_loss = AverageValueMeter()
 with open(logname, 'a') as f: #open and append
