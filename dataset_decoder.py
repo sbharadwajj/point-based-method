@@ -81,7 +81,7 @@ class Kitti360(data.Dataset):
         else:
             # center = get_center(os.path.join(self.inp_val, model_id))
             # partial =read_pcd(os.path.join(self.inp_val, model_id), center)
-            one_hot[torch.arange(1), self.Y[model_id]] = 1
+            one_hot[torch.arange(1), self.X_val[model_id]] = 1
             complete = read_pcd(os.path.join(self.gt_val, model_id), center)            
         return model_id, one_hot, resample_pcd(complete, self.npoints)
 
