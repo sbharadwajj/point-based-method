@@ -1,7 +1,10 @@
 ## Baseline for pointcloud extrapolation
 
 
-### Usage
+### Changes made:
+- added lr scheduler
+- removed feature_transform=True
+
 
 #### 1) Envrionment & prerequisites
 
