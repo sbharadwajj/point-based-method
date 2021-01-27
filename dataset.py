@@ -30,8 +30,6 @@ class Kitti360(data.Dataset):
                 self.Y = Y[np.in1d(Y, X)]
                 self.X = X
                 # assert((self.X == self.Y).all())
-            random.shuffle(self.X.tolist())
-            random.shuffle(self.Y.tolist())
             self.len = len(self.X)
 
         else:
@@ -56,11 +54,10 @@ class Kitti360(data.Dataset):
 
 
     def __getitem__(self, index):
-        # if self.train:
-        #     model_id = self.X[index]  
-        # else:
-        #     model_id = self.X_val[index]      
-        model_id = "9.dat"
+        if self.train:
+            model_id = self.X[index]  
+        else:
+            model_id = self.X_val[index]      
 
         # print(os.path.join(self.inp, model_id))
 
@@ -72,14 +69,6 @@ class Kitti360(data.Dataset):
             vec = np.squeeze(poses[poses[:,0] == id])
             reshaped = vec[1:].reshape(3,4)
             return reshaped[:,3:].astype(np.float64)
-
-        def get_center(filename):
-            '''
-            returns center
-            '''
-            point_set = np.loadtxt(filename)
-            center = np.expand_dims(np.mean(point_set, axis = 0), 0) # center
-            return center
 
         def read_pcd(filename, center):
             '''
@@ -93,11 +82,9 @@ class Kitti360(data.Dataset):
         
         center = trans_vector(model_id, self.pose_matrix).transpose()
         if self.train:
-            # center = get_center(os.path.join(self.inp, model_id))
             partial =read_pcd(os.path.join(self.inp, model_id), center)
             complete = read_pcd(os.path.join(self.gt, model_id), center)
         else:
-            # center = get_center(os.path.join(self.inp_val, model_id))
             partial =read_pcd(os.path.join(self.inp_val, model_id), center)
             complete = read_pcd(os.path.join(self.gt_val, model_id), center)            
         return model_id, resample_pcd(partial, 1024), resample_pcd(complete, self.npoints)

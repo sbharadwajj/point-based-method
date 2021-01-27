@@ -13,7 +13,7 @@ import json
 import time, datetime
 import visdom
 from time import time
-from chamferdist import ChamferDistance
+# from chamferdist import ChamferDistance
 sys.path.append('/home/bharadwaj/implementations/baseline1-torch')
 from chamfer_distance import ChamferDistance
 
@@ -35,7 +35,7 @@ print (opt)
 # create paths
 # vis = visdom.Visdom(port = 8097, env=opt.env) # set your port
 now = datetime.datetime.now()
-save_path = now.isoformat()
+save_path = 'full-training' + now.isoformat()
 if not os.path.exists('./log/'):
     os.mkdir('./log/')
 dir_name =  os.path.join('log', save_path)
@@ -66,7 +66,7 @@ print("Train Set Size: ", len_dataset)
 # networks
 print(opt.fc_nw)
 if opt.fc_nw:
-    network = PointNetCls(feature_transform=True)
+    network = PointNetCls(feature_transform=False)
 else:
     print("Deconv Network")
     network = PointNetDeconvCls()
@@ -82,6 +82,7 @@ if opt.model != '':
 # optimizer
 lrate = 0.0001 #learning rate
 optimizer = optim.Adam(network.parameters(), lr = lrate)
+scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=250, gamma=0.1)
 
 chamferDist = ChamferDistance()
 train_loss = AverageValueMeter()
@@ -102,12 +103,6 @@ for epoch in range(opt.nepoch):
     #TRAIN MODE
     train_loss.reset()
     network.train()
-    
-    # learning rate schedule
-    if epoch==20:
-        optimizer = optim.Adam(network.parameters(), lr = lrate/10.0)
-    if epoch==40:
-        optimizer = optim.Adam(network.parameters(), lr = lrate/100.0)
 
     for i, data in enumerate(dataloader, 0):
         optimizer.zero_grad()
@@ -123,7 +118,7 @@ for epoch in range(opt.nepoch):
         pred, _, _ = network(input)
     
         dist1, dist2 = chamferDist(pred, gt)
-        loss_net = (torch.mean(dist1)) + (torch.mean(dist2))
+        loss_net = ((torch.mean(dist1)) + (torch.mean(dist2)))/opt.batchSize
         loss_net.backward()
         if opt.cuda:
             loss_item = loss_net.detach().cpu().item()
@@ -176,5 +171,6 @@ for epoch in range(opt.nepoch):
     with open(logname, 'a') as f: 
         f.write('json_stats: ' + json.dumps(log_table) + '\n')
 
+    scheduler.step()
     print('saving net...')
     torch.save(network.state_dict(), '%s/network_%d.pth' % (dir_name, epoch))

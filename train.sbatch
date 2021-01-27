@@ -26,10 +26,10 @@
 
 
 
-#SBATCH --error=job_files/ttnewloss.%J.err
+#SBATCH --error=job_files/fullimg.%J.err
 # write the error output to trainencoder.*jobID*.err
 
-#SBATCH --output=job_files/ttnewloss.%J.out
+#SBATCH --output=job_files/fullimg.%J.out
 # write the standard output to trainencoder.*jobID*.out
 
 #SBATCH --mail-type=ALL
@@ -50,5 +50,5 @@ cp -R /home/bharadwaj/implementations/DATA/ /scratch/$SLURM_JOB_ID/
 #cnn_minst.py <model save path> <mnist data path>
 ####
 
-singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python train.py --batchSize 8 --nepoch 50 --cuda True --message mlptanhPoses9dat
+singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python train.py --batchSize 8 --nepoch 1000 --cuda True --message new-optim-lr-mlp-featFalse
 echo DONE!
