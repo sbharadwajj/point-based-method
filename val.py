@@ -20,26 +20,30 @@ opt = parser.parse_args()
 print (opt)
 
 network = PointNetCls(feature_transform=False)
-# network = PointNetDeconvCls()
-# import pdb; pdb.set_trace()
 if opt.cuda:
     network.cuda()
 
 network.apply(weights_init)
-
-# vis = visdom.Visdom(port = 8097, env=opt.env) # set your port
 
 if opt.model != '':
     network.load_state_dict(torch.load(opt.model, map_location=torch.device('cpu')))
     print("Previous weight loaded ")
 
 network.eval()
-# with open(os.path.join('./data/val.list')) as file:
-#     model_list = [line.strip().replace('/', '_') for line in file]
 
 partial_dir = '/home/bharadwaj/implementations/DATA/downsampled_inp/downsampled_predict/'
 gt_dir = '/home/bharadwaj/implementations/DATA/downsampled_fused/downsampled_predict/'
-# vis = visdom.Visdom(port = 8097, env=opt.env) # set your port
+pose = '/home/bharadwaj/implementations/DATA/poses.txt'
+pose_matrix = np.loadtxt(pose)
+
+def trans_vector(model_id, poses):
+    '''
+    gets poses from pose.txt for each file
+    '''
+    id = float(model_id.split('.')[0])
+    vec = np.squeeze(poses[poses[:,0] == id])
+    reshaped = vec[1:].reshape(3,4)
+    return reshaped[:,3:].astype(np.float64)
 
 def resample_pcd(pcd, n):
     """Drop or duplicate points so that pcd has exactly n points"""
@@ -48,13 +52,9 @@ def resample_pcd(pcd, n):
         idx = np.concatenate([idx, np.random.randint(pcd.shape[0], size = n - pcd.shape[0])])
     return pcd[idx[:n]]
 
-
-# labels_generated_points = torch.Tensor(range(1, (opt.n_primitives+1)*(opt.num_points//opt.n_primitives)+1)).view(opt.num_points//opt.n_primitives,(opt.n_primitives+1)).transpose(0,1)
-# labels_generated_points = (labels_generated_points)%(opt.n_primitives+1)
-# labels_generated_points = labels_generated_points.contiguous().view(-1)
-def read_pcd(filename):
+def read_pcd(filename, center):
     point_set = np.loadtxt(filename)
-    point_set = point_set - np.expand_dims(np.mean(point_set, axis = 0), 0) # center
+    point_set = point_set - center
     dist = np.max(np.sqrt(np.sum(point_set ** 2, axis = 1)),0)
     pcd = point_set / dist #scale
     return torch.from_numpy(np.array(pcd)).float()
@@ -67,39 +67,16 @@ with torch.no_grad():
     print(network)
     partial_list = []
     gt_list = []
+    poses = []
     for i in data_list:
-        partial = resample_pcd(read_pcd(partial_dir + i), 1024).unsqueeze(0)
-        gt = resample_pcd(read_pcd(gt_dir + i), 5000).unsqueeze(0)
+        center = trans_vector(i, pose_matrix).transpose()
+        partial = resample_pcd(read_pcd(partial_dir + i, center), 1024).unsqueeze(0)
+        gt = resample_pcd(read_pcd(gt_dir + i, center), 5000).unsqueeze(0)
         partial_list.append(partial)
         gt_list.append(gt)
+        poses.append(center)
     partial = torch.cat(partial_list, 0)
     gt = torch.cat(gt_list, 0)
-    # import pdb; pdb.set_trace()
-
-
-    # partial = torch.zeros((8, 1024, 3), device='cuda')
-    # gt = torch.zeros((8, opt.num_points, 3), device='cuda')
-    # for j in range(8):
-    #     pcd = o3d.io.read_point_cloud(os.path.join(partial_dir, model + '_' + str(j) + '_denoised.pcd'))
-    #     partial[j, :, :] = torch.from_numpy(resample_pcd(np.array(pcd.points), 5000))
-    #     pcd = o3d.io.read_point_cloud(os.path.join(gt_dir, model + '.pcd'))
-    #     gt[j, :, :] = torch.from_numpy(resample_pcd(np.array(pcd.points), opt.num_points))
+    pose_mat = np.concatenate(poses, 0)
     pred, _, _ = network(partial.transpose(2,1).contiguous())
-    np.savez('full-img-499.npz', predictions=pred.numpy(), data=partial.numpy(), gt=gt.numpy())
-    # dist, _ = EMD(output1, gt, 0.002, 10000)
-    # emd1 = torch.sqrt(dist).mean()
-    # dist, _ = EMD(output2, gt, 0.002, 10000)
-    # emd2 = torch.sqrt(dist).mean()
-    # idx = random.randint(0, 49)
-    # vis.scatter(X = gt[idx].data.cpu(), win = 'GT',
-    #             opts = dict(title = model, markersize = 2))
-    # vis.scatter(X = partial[idx].data.cpu(), win = 'INPUT',
-    #             opts = dict(title = model, markersize = 2))
-    # vis.scatter(X = output1[idx].data.cpu(),
-    #             Y = labels_generated_points[0:output1.size(1)],
-    #             win = 'COARSE',
-    #             opts = dict(title = model, markersize=2))
-    # vis.scatter(X = output2[idx].data.cpu(),
-    #             win = 'OUTPUT',
-    #             opts = dict(title = model, markersize=2))
-    # print(opt.env + ' val [%d/%d]  emd1: %f emd2: %f expansion_penalty: %f' %(i + 1, len(model_list), emd1.item(), emd2.item(), expansion_penalty.mean().item()))
+    np.savez('full-img-499.npz', predictions=pred.numpy(), data=partial.numpy(), gt=gt.numpy(), poses=pose_mat)
