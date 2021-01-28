@@ -37,8 +37,8 @@ network.eval()
 # with open(os.path.join('./data/val.list')) as file:
 #     model_list = [line.strip().replace('/', '_') for line in file]
 
-partial_dir = '/home/bharadwaj/implementations/DATA/downsampled_inp/downsampled_train/'
-gt_dir = '/home/bharadwaj/implementations/DATA/downsampled_fused/downsampled_train/'
+partial_dir = '/home/bharadwaj/implementations/DATA/downsampled_inp/downsampled_predict/'
+gt_dir = '/home/bharadwaj/implementations/DATA/downsampled_fused/downsampled_predict/'
 # vis = visdom.Visdom(port = 8097, env=opt.env) # set your port
 
 def resample_pcd(pcd, n):
@@ -59,8 +59,8 @@ def read_pcd(filename):
     pcd = point_set / dist #scale
     return torch.from_numpy(np.array(pcd)).float()
 
-data_list = ["106.dat", "22.dat", "269.dat", "370.dat", "429.dat", "555.dat", "670.dat", "750.dat"]
-# data_list = ['808.dat', "914.dat", "996.dat", "850.dat", "956.dat"]
+# data_list = ["106.dat", "22.dat", "269.dat", "370.dat", "429.dat", "555.dat", "670.dat", "750.dat"]
+data_list = ['808.dat', "914.dat", "996.dat", "850.dat", "956.dat"]
 # data_list = ["9.dat"]
 with torch.no_grad():
 # for i, model in enumerate(model_list):
@@ -85,7 +85,7 @@ with torch.no_grad():
     #     pcd = o3d.io.read_point_cloud(os.path.join(gt_dir, model + '.pcd'))
     #     gt[j, :, :] = torch.from_numpy(resample_pcd(np.array(pcd.points), opt.num_points))
     pred, _, _ = network(partial.transpose(2,1).contiguous())
-    np.savez('8-img-999.npz', predictions=pred.numpy(), data=partial.numpy(), gt=gt.numpy())
+    np.savez('full-img-499.npz', predictions=pred.numpy(), data=partial.numpy(), gt=gt.numpy())
     # dist, _ = EMD(output1, gt, 0.002, 10000)
     # emd1 = torch.sqrt(dist).mean()
     # dist, _ = EMD(output2, gt, 0.002, 10000)
