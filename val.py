@@ -59,9 +59,9 @@ def read_pcd(filename, center):
     pcd = point_set / dist #scale
     return torch.from_numpy(np.array(pcd)).float()
 
-# data_list = ["106.dat", "22.dat", "269.dat", "370.dat", "429.dat", "555.dat", "670.dat", "750.dat"]
-data_list = ['808.dat', "914.dat", "996.dat", "850.dat", "956.dat"]
-# data_list = ["9.dat"]
+# data_list = ,""106.dat"", ""22.dat"",,""269.dat"",,""370.dat"",,""429.dat"",,""555.dat"",,""670.dat"",,""750.dat""]
+data_list = ["808.dat","914.dat","996.dat","850.dat","956.dat", "806.dat", "816.dat", "826.dat", "836.dat", "846.dat", "856.dat", "866.dat", "876.dat", "886.dat", "896.dat", "905.dat", "915.dat", "925.dat", "935.dat", "945.dat", "955.dat", "965.dat", "975.dat", "985.dat", "995.dat"]
+# data_list , "["9.dat""]
 with torch.no_grad():
 # for i, model in enumerate(model_list):
     print(network)
@@ -79,4 +79,4 @@ with torch.no_grad():
     gt = torch.cat(gt_list, 0)
     pose_mat = np.concatenate(poses, 0)
     pred, _, _ = network(partial.transpose(2,1).contiguous())
-    np.savez('full-img-499.npz', predictions=pred.numpy(), data=partial.numpy(), gt=gt.numpy(), poses=pose_mat)
+    np.savez('full-img-300-150.npz', predictions=pred.numpy(), data=partial.numpy(), gt=gt.numpy(), poses=pose_mat)

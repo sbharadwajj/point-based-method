@@ -80,9 +80,9 @@ if opt.model != '':
     print("Previous weight loaded ")
 
 # optimizer
-lrate = 0.0001 #learning rate
+lrate = 0.001 #learning rate
 optimizer = optim.Adam(network.parameters(), lr = lrate)
-scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=250, gamma=0.1)
+scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.1)
 
 chamferDist = ChamferDistance()
 train_loss = AverageValueMeter()
@@ -147,7 +147,7 @@ for epoch in range(opt.nepoch):
                 input = input.transpose(2,1).contiguous()
                 pred, _, _ = network(input)    
                 dist1, dist2 = chamferDist(pred, gt)
-                loss_net = (torch.mean(dist1)) + (torch.mean(dist2)) 
+                loss_net = ((torch.mean(dist1)) + (torch.mean(dist2)))/opt.batchSize
 
                 if opt.cuda:     
                     val_loss_item = loss_net.detach().cpu().item() #.cpu()    

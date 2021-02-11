@@ -19,8 +19,10 @@ class Kitti360(data.Dataset):
         if train:
             self.inp = '/home/bharadwaj/implementations/DATA/downsampled_inp/downsampled_train'
             self.gt = '/home/bharadwaj/implementations/DATA/downsampled_fused/downsampled_train'
-            X = np.asarray(os.listdir(self.inp))
-            Y = np.asarray(os.listdir(self.gt))
+            X_ = np.asarray(os.listdir(self.inp))
+            X = X_[X_ > "170"]
+            Y_ = np.asarray(os.listdir(self.gt))
+            Y = Y_[Y_ > "170"]
             #ASSERT WORKS ONLY FOR SAME NAMES
             if np.shape(X) > np.shape(Y):
                 self.X = X[np.in1d(X, Y)]
