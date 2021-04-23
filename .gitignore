@@ -3,3 +3,4 @@ log
 job_files
 log_deconv
 log_fc
+log_shapenet

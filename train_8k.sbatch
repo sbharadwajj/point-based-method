@@ -26,10 +26,10 @@
 
 
 
-#SBATCH --error=job_files/fullimg.%J.err
+#SBATCH --error=job_files/fullimg8k.%J.err
 # write the error output to trainencoder.*jobID*.err
 
-#SBATCH --output=job_files/fullimg.%J.out
+#SBATCH --output=job_files/fullimg8k.%J.out
 # write the standard output to trainencoder.*jobID*.out
 
 #SBATCH --mail-type=ALL
@@ -50,5 +50,5 @@
 #cnn_minst.py <model save path> <mnist data path>
 ####
 
-singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python train.py --batchSize 8 --dataset_path /home/bharadwaj/dataset/shapenet --num_points 2048 --nepoch 150 --cuda True --message shapenet-train
+singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python train.py --batchSize 8 --num_points 8192 --nepoch 150 --cuda True --message 4096-8192
 echo DONE!
