@@ -6,7 +6,7 @@ import torchvision.transforms as transforms
 import os
 import random
 
-from data_utils import load_h5, pad_cloudN
+from data_utils import load_h5, pad_cloudN, augment_cloud
 #from utils import *
 
 def resample_pcd(pcd, n):
@@ -17,14 +17,14 @@ def resample_pcd(pcd, n):
     return pcd[idx[:n]]
            
 class Kitti360(data.Dataset): 
-    def __init__(self, dir_name, train = True, npoints = 5000):
+    def __init__(self, dir_name, train = True, npoints_partial = 2048, npoints = 4096):
         if train:
             self.inp = '/home/bharadwaj/dataset/final_training/train_partial'
             self.gt = '/home/bharadwaj/dataset/final_training/train_gt_npy'
             X = np.asarray(os.listdir(self.inp))
             Y = np.asarray(os.listdir(self.gt))
             np.random.shuffle(Y)
-            self.Y = Y[:15000]
+            self.Y = Y
             self.len = len(self.Y)
             path = os.path.join(dir_name, "train_files.txt")
             np.savetxt(path, self.Y, fmt='%s')
@@ -34,6 +34,7 @@ class Kitti360(data.Dataset):
             X_val = np.asarray(os.listdir(self.inp_val))
             self.Y_val = np.asarray(os.listdir(self.gt_val))
             self.len = len(self.Y_val)
+        self.npoints_partial = npoints_partial
         self.npoints = npoints
         self.train = train
         self.pose = '/home/bharadwaj/dataset/KITTI-360/data_poses'
@@ -62,7 +63,7 @@ class Kitti360(data.Dataset):
         point_set = point_set - center
         dist = np.max(np.sqrt(np.sum(point_set ** 2, axis = 1)),0)
         pcd = point_set / dist #scale
-        return (torch.from_numpy(np.array(pcd)).float())
+        return pcd.astype(np.float)
 
     def __getitem__(self, index):
         if self.train:
@@ -78,12 +79,13 @@ class Kitti360(data.Dataset):
         center = self.trans_vector(file_name, self.pose_dict[drive_name]).transpose()
         
         if self.train:
-            partial = self.read_pcd(os.path.join(self.inp, x_path), center, dat=True)
-            complete = self.read_pcd(os.path.join(self.gt, model_id), center, dat=False)
+            partial_ = self.read_pcd(os.path.join(self.inp, x_path), center, dat=True)
+            complete_ = self.read_pcd(os.path.join(self.gt, model_id), center, dat=False)
+            complete, partial = augment_cloud([complete_, partial_])
         else:
             partial = self.read_pcd(os.path.join(self.inp_val, x_path), center, dat=True)
             complete = self.read_pcd(os.path.join(self.gt_val, model_id), center, dat=False)            
-        return model_id, resample_pcd(partial, 2048), resample_pcd(complete, self.npoints)
+        return model_id, resample_pcd(partial, self.npoints_partial), resample_pcd(complete, self.npoints)
 
     def __len__(self):
         return self.len
@@ -95,14 +97,14 @@ class Shapenet(data.Dataset):
         self.npoints = npoints
         if self.train:
             # train on a single category to test
-            self.inp = os.path.join(dataset_path, "train", "partial", "03001627")
-            self.gt = os.path.join(dataset_path, "train", "gt", "03001627")
+            self.inp = os.path.join(dataset_path, "train", "partial")
+            self.gt = os.path.join(dataset_path, "train", "gt")
             self.X = os.listdir(self.inp)
             self.y = os.listdir(self.gt)
             self.len = len(os.listdir(self.inp))
         else:
-            self.inp = os.path.join(dataset_path, "val", "partial", "03001627")
-            self.gt = os.path.join(dataset_path, "val", "gt", "03001627")
+            self.inp = os.path.join(dataset_path, "val", "partial")
+            self.gt = os.path.join(dataset_path, "val", "gt")
             self.X = os.listdir(self.inp)
             self.y = os.listdir(self.gt)
             self.len = len(os.listdir(self.inp))
@@ -111,9 +113,6 @@ class Shapenet(data.Dataset):
     def get_pair(self, fname, train):
         partial = load_h5(os.path.join(self.inp, fname))
         gtpts = load_h5(os.path.join(self.gt, fname))
-        # FIX CODE AND ADD AUGMENTATION
-        # if train:
-        #     gtpts, partial = augment_cloud([gtpts, partial], args)
         partial  = pad_cloudN(partial, self.inp_points)
         return partial, gtpts
 
@@ -126,6 +125,50 @@ class Shapenet(data.Dataset):
 
     def __getitem__(self, index):
         model_id = self.X[index]
+        return self.load_data(model_id)
+    
+    def __len__(self):
+        return self.len
+
+class Shapenet_allCategories(data.Dataset): 
+    def __init__(self, dataset_path, train = True, inp_points=1024 , npoints = 2048):
+        self.train = train
+        self.inp_points = inp_points
+        self.npoints = npoints
+        if self.train:
+            self.inp = os.path.join(dataset_path, "train", "partial")
+            self.gt = os.path.join(dataset_path, "train", "gt")
+            self.data_paths = sorted([os.path.join(dataset_path, 'train', 'partial', k.rstrip()+ '.h5') for k in open(os.path.join(dataset_path, 'train.list')).readlines()])
+            self.len = len(self.data_paths)
+        else:
+            self.inp = os.path.join(dataset_path, "val", "partial")
+            self.gt = os.path.join(dataset_path, "val", "gt")
+            self.data_paths = sorted([os.path.join(dataset_path, 'val', 'partial', k.rstrip()+ '.h5') for k in open(os.path.join(dataset_path, 'val.list')).readlines()])
+            self.X = os.listdir(self.inp)
+            self.y = os.listdir(self.gt)
+            self.len = len(self.data_paths)
+        self.npoints = npoints
+
+    def get_pair(self, fname, train):
+        folder = fname.split("/")[-2]
+        name = fname.split("/")[-1]
+        partial = load_h5(os.path.join(self.inp, folder, name))
+        gtpts = load_h5(os.path.join(self.gt, folder, name))
+        # FIX CODE AND ADD AUGMENTATION
+        if train:
+            gtpts, partial = augment_cloud([gtpts, partial])
+        partial  = pad_cloudN(partial, self.inp_points)
+        return partial, gtpts
+
+    def load_data(self, fname):
+        pair = self.get_pair(fname, train=self.train == 'train')
+        partial = pair[0].T
+        target = pair[1]
+        cloud_meta = ['{}.{:d}'.format('/'.join(fname.split('/')[-2:]),0),]
+        return cloud_meta, partial, target
+
+    def __getitem__(self, index):
+        model_id = self.data_paths[index]
         return self.load_data(model_id)
     
     def __len__(self):

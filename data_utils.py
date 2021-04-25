@@ -26,25 +26,31 @@ def pad_cloudN(P, Nin):
 
     return P
 
-def augment_cloud(Ps, args):
+def augment_cloud(Ps):
     """" Augmentation on XYZ and jittering of everything """
+    "Augmented params:"
+    pc_augm_scale=0
+    pc_augm_rot=1
+    pc_augm_mirror_prob=0.5
+    pc_augm_jitter=0
+
     M = transforms3d.zooms.zfdir2mat(1)
-    if args.pc_augm_scale > 1:
-        s = random.uniform(1/args.pc_augm_scale, args.pc_augm_scale)
+    if pc_augm_scale > 1:
+        s = random.uniform(1/pc_augm_scale, pc_augm_scale)
         M = np.dot(transforms3d.zooms.zfdir2mat(s), M)
-    if args.pc_augm_rot:
+    if pc_augm_rot:
         angle = random.uniform(0, 2*math.pi)
         M = np.dot(transforms3d.axangles.axangle2mat([0,1,0], angle), M) # y=upright assumption
-    if args.pc_augm_mirror_prob > 0: # mirroring x&z, not y
-        if random.random() < args.pc_augm_mirror_prob/2:
+    if pc_augm_mirror_prob > 0: # mirroring x&z, not y
+        if random.random() < pc_augm_mirror_prob/2:
             M = np.dot(transforms3d.zooms.zfdir2mat(-1, [1,0,0]), M)
-        if random.random() < args.pc_augm_mirror_prob/2:
+        if random.random() < pc_augm_mirror_prob/2:
             M = np.dot(transforms3d.zooms.zfdir2mat(-1, [0,0,1]), M)
     result = []
     for P in Ps:
         P[:,:3] = np.dot(P[:,:3], M.T)
 
-        if args.pc_augm_jitter:
+        if pc_augm_jitter:
             sigma, clip= 0.01, 0.05 # https://github.com/charlesq34/pointnet/blob/master/provider.py#L74
             P = P + np.clip(sigma * np.random.randn(*P.shape), -1*clip, clip).astype(np.float32)
         result.append(P)

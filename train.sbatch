@@ -8,28 +8,28 @@
 
 #resources:
 
-#SBATCH --cpus-per-task=12
+#SBATCH --cpus-per-task=4
 # the job can use and see 4 CPUs (from max 24).
 
-#SBATCH --partition=week
+#SBATCH --partition=day
 # the slurm partition the job is queued to.
 
-#SBATCH --mem-per-cpu=16G
+#SBATCH --mem-per-cpu=12G
 # the job will need 12GB of memory equally distributed on 4 cpus.  (251GB are available in total on one node)
 
 #SBATCH --gres=gpu:1
 #the job can use and see 1 GPUs (4 GPUs are available in total on one node)
 
-#SBATCH --time=80:00:00
+#SBATCH --time=22:00:00
 # the maximum time the scripts needs to run
 # "minutes:seconds", "hours:minutes:seconds", "days-hours", "days-hours:minutes" and "days-hours:minutes:seconds"
 
 
 
-#SBATCH --error=job_files/fullimg.%J.err
+#SBATCH --error=job_files/dataaug.%J.err
 # write the error output to trainencoder.*jobID*.err
 
-#SBATCH --output=job_files/fullimg.%J.out
+#SBATCH --output=job_files/dataaug.%J.out
 # write the standard output to trainencoder.*jobID*.out
 
 #SBATCH --mail-type=ALL
@@ -50,5 +50,5 @@
 #cnn_minst.py <model save path> <mnist data path>
 ####
 
-singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python train.py --batchSize 8 --dataset_path /home/bharadwaj/dataset/shapenet --num_points 2048 --nepoch 150 --cuda True --message shapenet-train
+singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python train.py --dataset ../../dataset/shapenet --batchSize 16 --num_points 2048 --num_point_partial 1024 --nepoch 200 --cuda True --message 1024-2048
 echo DONE!

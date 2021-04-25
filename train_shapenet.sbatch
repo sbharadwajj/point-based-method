@@ -50,5 +50,5 @@
 #cnn_minst.py <model save path> <mnist data path>
 ####
 
-singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python train.py --batchSize 8 --dataset_path /home/bharadwaj/dataset/shapenet --num_points 2048 --nepoch 150 --cuda True --message shapenet-train
+singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python train.py --batchSize 8 --dataset_path /home/bharadwaj/dataset/shapenet --num_points 2048 --nepoch 200 --cuda True --message shapenet-train
 echo DONE!

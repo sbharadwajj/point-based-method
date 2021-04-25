@@ -50,5 +50,5 @@
 #cnn_minst.py <model save path> <mnist data path>
 ####
 
-singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python train.py --batchSize 8 --num_points 8192 --nepoch 150 --cuda True --message 4096-8192
+singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python train.py --batchSize 8 --num_points 8192 --nepoch 200 --cuda True --message 4096-8192
 echo DONE!

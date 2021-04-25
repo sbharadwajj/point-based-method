@@ -13,9 +13,7 @@ import json
 import time, datetime
 import visdom
 from time import time
-# from chamferdist import ChamferDistance
-sys.path.append('/home/bharadwaj/implementations/baseline1-torch')
-from chamfer_distance import ChamferDistance
+from pytorch3d.loss import chamfer_distance
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--batchSize', type=int, default=8, help='input batch size')
@@ -24,6 +22,7 @@ parser.add_argument('--workers', type=int, help='number of data loading workers'
 parser.add_argument('--nepoch', type=int, default=25, help='number of epochs to train for')
 parser.add_argument('--model', type=str, default = '',  help='optional reload model path')
 parser.add_argument('--num_points', type=int, default = 5000,  help='number of points')
+parser.add_argument('--num_point_partial', type=int, default = 1024,  help='number of points')
 parser.add_argument('--n_primitives', type=int, default = 16,  help='number of surface elements')
 parser.add_argument('--env', type=str, default ="MSN_TRAIN"   ,  help='visdom environment')
 parser.add_argument('--cuda', type=bool, default = False   ,  help='if running on cuda')
@@ -34,16 +33,14 @@ parser.add_argument('--message', type=str, default = "training"   ,  help='specs
 opt = parser.parse_args()
 print (opt)
 
-# create paths
-# vis = visdom.Visdom(port = 8097, env=opt.env) # set your port
 now = datetime.datetime.now()
-save_path = 'shapenet-training' + now.isoformat()
-if not os.path.exists('./log_shapenet/'):
-    os.mkdir('./log_shapenet/')
-dir_name =  os.path.join('log_shapenet', save_path)
+save_path = 'kitti360-dataaug-1024-2048' + now.isoformat()
+if not os.path.exists('./log_kitti360/'):
+    os.mkdir('./log_kitti360/')
+dir_name =  os.path.join('log_kitti360', save_path)
 if not os.path.exists(dir_name):
     os.mkdir(dir_name)
-logname = os.path.join(dir_name, 'log_shapenet.txt')
+logname = os.path.join(dir_name, 'log_kitti360.txt')
 os.system('cp ./train.py %s' % dir_name)
 os.system('cp ./dataset.py %s' % dir_name)
 os.system('cp ./model.py %s' % dir_name)
@@ -55,20 +52,36 @@ torch.manual_seed(opt.manualSeed)
 best_val_loss = 10
 
 # dataloader
-# dataset = Kitti360(dir_name, train=True, npoints=opt.num_points)
-# dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize,
-#                                           shuffle=True, num_workers=int(opt.workers))
-# dataset_test = Kitti360(dir_name, train=False, npoints=opt.num_points)
-# dataloader_test = torch.utils.data.DataLoader(dataset_test, batch_size=opt.batchSize,
-#                                           shuffle=False, num_workers=int(opt.workers))
-
-dataset = Shapenet(dataset_path=opt.dataset_path, train=True, inp_points = 1024, npoints=opt.num_points)
+dataset = Kitti360(dir_name, train=True, npoints_partial = opt.num_point_partial, npoints=opt.num_points)
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize,
                                           shuffle=True, num_workers=int(opt.workers))
-dataset_test = Shapenet(dataset_path=opt.dataset_path, train=False, inp_points=1024, npoints=opt.num_points)
+dataset_test = Kitti360(dir_name, train=False, npoints_partial = opt.num_point_partial, npoints=opt.num_points)
 dataloader_test = torch.utils.data.DataLoader(dataset_test, batch_size=opt.batchSize,
                                           shuffle=False, num_workers=int(opt.workers))
 
+# dataset = Shapenet(dataset_path=opt.dataset_path, train=True, inp_points = 1024, npoints=opt.num_points)
+# dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize,
+#                                           shuffle=True, num_workers=int(opt.workers))
+# dataset_test = Shapenet(dataset_path=opt.dataset_path, train=False, inp_points=1024, npoints=opt.num_points)
+# dataloader_test = torch.utils.data.DataLoader(dataset_test, batch_size=opt.batchSize,
+#                                           shuffle=False, num_workers=int(opt.workers))
+
+# dataset_sh = Shapenet_allCategories(dataset_path=opt.dataset_path, train=True, inp_points = 1024, npoints=opt.num_points)
+# dataloader_sh = torch.utils.data.DataLoader(dataset_sh, batch_size=opt.batchSize,
+#                                           shuffle=True, num_workers=int(opt.workers))
+# dataset_test_sh = Shapenet_allCategories(dataset_path=opt.dataset_path, train=False, inp_points=1024, npoints=opt.num_points)
+# dataloader_test_sh = torch.utils.data.DataLoader(dataset_test_sh, batch_size=opt.batchSize,
+#                                           shuffle=False, num_workers=int(opt.workers))
+
+# one = time()
+# data = [[i,data] for i,data in enumerate(dataloader,0)]
+# print(str(time() - one))
+
+# two = time()
+# data = [[i,data] for i,data in enumerate(dataloader_sh,0)]
+# print(str(time() - two))
+
+# import pdb;pdb.set_trace()
 len_dataset = len(dataset)
 print("Train Set Size: ", len_dataset)
 
@@ -90,9 +103,8 @@ if opt.model != '':
 # optimizer
 lrate = 0.0001 #learning rate
 optimizer = optim.Adam(network.parameters(), lr = lrate)
-scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=25, gamma=0.1)
+scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.1)
 
-chamferDist = ChamferDistance()
 train_loss = AverageValueMeter()
 val_loss = AverageValueMeter()
 with open(logname, 'a') as f: #open and append
@@ -122,10 +134,9 @@ for epoch in range(opt.nepoch):
             input = input.cuda()
             gt = gt.cuda()
 
-        # input = input.transpose(2,1).contiguous()
+        input = input.transpose(2,1) #.contiguous()
         pred, _, _ = network(input)
-        dist1, dist2 = chamferDist(pred, gt)
-        loss_net = ((torch.mean(dist1)) + (torch.mean(dist2)))/opt.batchSize
+        loss_net, dist2 = chamfer_distance(pred, gt)
         loss_net.backward()
         if opt.cuda:
             loss_item = loss_net.detach().cpu().item()
@@ -151,10 +162,9 @@ for epoch in range(opt.nepoch):
                     input = input.cuda()
                     gt = gt.cuda()
 
-                input = input.transpose(2,1).contiguous()
-                pred, _, _ = network(input)    
-                dist1, dist2 = chamferDist(pred, gt)
-                loss_net = ((torch.mean(dist1)) + (torch.mean(dist2)))/opt.batchSize
+                input = input.transpose(2,1) #.contiguous()
+                pred, _, _ = network(input)  
+                loss_net, _ = chamfer_distance(pred, gt)  
 
                 if opt.cuda:     
                     val_loss_item = loss_net.detach().cpu().item() #.cpu()    
@@ -168,8 +178,8 @@ for epoch in range(opt.nepoch):
 
 
     log_table = {
-      "train_loss" : train_loss.avg,
-      "val_loss" : val_loss.avg,
+      "train_loss" : train_loss.avg*100,
+      "val_loss" : val_loss.avg*100,
       "epoch" : epoch,
       "lr" : lrate,
       "bestval" : best_val_loss,
