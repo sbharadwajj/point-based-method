@@ -26,10 +26,10 @@
 
 
 
-#SBATCH --error=job_files/dataaug.%J.err
+#SBATCH --error=job_files/val.%J.err
 # write the error output to trainencoder.*jobID*.err
 
-#SBATCH --output=job_files/dataaug.%J.out
+#SBATCH --output=job_files/val.%J.out
 # write the standard output to trainencoder.*jobID*.out
 
 #SBATCH --mail-type=ALL
@@ -50,5 +50,5 @@
 #cnn_minst.py <model save path> <mnist data path>
 ####
 
-singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python train.py --dataset kitti360 --dataset_path ../../dataset/scripts/4096-8192-kitti360/ --batchSize 8 --num_points 2048 --num_point_partial 1024 --nepoch 200 --cuda True --message 1024-2048
+singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python val.py --dataset_path ../../dataset/scripts/4096-8192-kitti360/ --model log_kitti360/kitti360-full-dataset-NoDatAug-pt-gt2021-04-29T13\:46\:13.782757/network_54.pth --num_points 8192 --cuda True
 echo DONE!

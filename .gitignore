@@ -5,3 +5,5 @@ log_deconv
 log_fc
 log_shapenet
 log_kitti360
+preds_fullkitti
+overfit_kitti360

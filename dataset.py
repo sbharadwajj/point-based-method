@@ -18,15 +18,22 @@ class Kitti360(data.Dataset):
             self.gt = os.path.join(dataset_path, "train", "gt")
             self.X = os.listdir(self.inp)
             self.Y = os.listdir(self.gt)
-            np.random.shuffle(self.Y)
+
+            sort_y = sorted(self.Y)[0::2000] # choose 10
+            self.Y = sort_y
             self.len = len(self.Y)
         else:
             self.inp = os.path.join(dataset_path, "val", "partial")
             self.gt = os.path.join(dataset_path, "val", "gt")
             self.X = os.listdir(self.inp)
-            self.Y = os.listdir(self.gt)
+            self.Y = os.listdir(self.gt)[:2000]
+            # sort_y = sorted(self.Y)[0::2000] # choose the 100th one
+            # print(sort_y)
+            # self.Y = sort_y
             self.len = len(self.Y)
 
+        # print(self.inp)
+        # print(self.gt)
         '''
         loads poses to a dictonary to read
         '''
@@ -53,7 +60,7 @@ class Kitti360(data.Dataset):
         point_set = point_set - center
         dist = np.max(np.sqrt(np.sum(point_set ** 2, axis = 1)),0)
         pcd = point_set / dist # scale
-        return pcd.astype(np.float)
+        return pcd #.astype(np.float)
 
     def __getitem__(self, index):        
         model_id = self.Y[index] 
@@ -65,9 +72,9 @@ class Kitti360(data.Dataset):
 
         partial = self.read_pcd(os.path.join(self.inp, model_id), center)
         complete = self.read_pcd(os.path.join(self.gt, model_id), center)        
-        if self.train:
-            complete, partial = augment_cloud([complete, partial])           
-        return model_id, partial, complete
+        # if self.train:
+        #     complete, partial = augment_cloud([complete, partial])           
+        return model_id, partial.astype(np.float32), complete.astype(np.float32)
 
     def __len__(self):
         return self.len

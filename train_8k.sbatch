@@ -8,13 +8,13 @@
 
 #resources:
 
-#SBATCH --cpus-per-task=12
+#SBATCH --cpus-per-task=6
 # the job can use and see 4 CPUs (from max 24).
 
 #SBATCH --partition=week
 # the slurm partition the job is queued to.
 
-#SBATCH --mem-per-cpu=16G
+#SBATCH --mem-per-cpu=8G
 # the job will need 12GB of memory equally distributed on 4 cpus.  (251GB are available in total on one node)
 
 #SBATCH --gres=gpu:1
@@ -50,5 +50,5 @@
 #cnn_minst.py <model save path> <mnist data path>
 ####
 
-singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python train.py --batchSize 8 --num_points 8192 --nepoch 200 --cuda True --message 4096-8192
+singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python train.py --dataset kitti360 --dataset_path ../../dataset/scripts/4096-8192-kitti360/ --num_points 8192 --num_point_partial 4096 --batchSize 8 --cuda True
 echo DONE!

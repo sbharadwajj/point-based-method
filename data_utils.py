@@ -27,8 +27,11 @@ def pad_cloudN(P, Nin):
     return P
 
 def augment_cloud(Ps):
-    """" Augmentation on XYZ and jittering of everything """
+    """" Augmentation on XYZ and jittering of everything 
+    Utilized: Only rotation and flip
+    """
     "Augmented params:"
+
     pc_augm_scale=0
     pc_augm_rot=1
     pc_augm_mirror_prob=0.5
@@ -40,12 +43,12 @@ def augment_cloud(Ps):
         M = np.dot(transforms3d.zooms.zfdir2mat(s), M)
     if pc_augm_rot:
         angle = random.uniform(0, 2*math.pi)
-        M = np.dot(transforms3d.axangles.axangle2mat([0,1,0], angle), M) # y=upright assumption
-    if pc_augm_mirror_prob > 0: # mirroring x&z, not y
+        M = np.dot(transforms3d.axangles.axangle2mat([0,0,1], angle), M) # along z-axis
+    if pc_augm_mirror_prob > 0: # mirroring x&y, not z
         if random.random() < pc_augm_mirror_prob/2:
             M = np.dot(transforms3d.zooms.zfdir2mat(-1, [1,0,0]), M)
         if random.random() < pc_augm_mirror_prob/2:
-            M = np.dot(transforms3d.zooms.zfdir2mat(-1, [0,0,1]), M)
+            M = np.dot(transforms3d.zooms.zfdir2mat(-1, [0,1,0]), M)
     result = []
     for P in Ps:
         P[:,:3] = np.dot(P[:,:3], M.T)
