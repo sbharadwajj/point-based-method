@@ -103,7 +103,6 @@ with torch.no_grad():
 
         val_loss.update(loss_net.detach().cpu().item())
 
-
     print("val loss avg:",val_loss.avg*100) 
     partial = torch.cat(partial_list, 0)
     gt = torch.cat(gt_list, 0)
@@ -112,4 +111,4 @@ with torch.no_grad():
 
 
     name = opt.model.split("/")[-1]
-    np.savez(name.split(".")[0] + "lrSchedu.npz", predictions=pred.cpu().numpy(), data=partial.cpu().numpy(), gt=gt.cpu().numpy())
+    np.savez(name.split(".")[0] + "weightedCD-both.npz", predictions=pred.cpu().numpy(), data=partial.cpu().numpy(), gt=gt.cpu().numpy())

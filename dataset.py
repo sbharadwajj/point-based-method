@@ -11,16 +11,18 @@ from data_utils import load_h5, pad_cloudN, augment_cloud
 
            
 class Kitti360(data.Dataset): 
-    def __init__(self, dataset_path, train = True, npoints_partial = 1024, npoints = 2048):
+    def __init__(self, dataset_path, train = True, weights = False, npoints_partial = 1024, npoints = 2048):
         self.train = train
+        self.npoints = npoints
+        self.weights = weights
         if self.train:
             self.inp = os.path.join(dataset_path, "train", "partial")
             self.gt = os.path.join(dataset_path, "train", "gt")
             self.X = os.listdir(self.inp)
             self.Y = os.listdir(self.gt)
 
-            sort_y = sorted(self.Y)[0::2000] # choose 10
-            self.Y = sort_y
+            # sort_y = sorted(self.Y)[0::2000] # choose 10
+            # self.Y = sort_y
             self.len = len(self.Y)
         else:
             self.inp = os.path.join(dataset_path, "val", "partial")
@@ -42,6 +44,15 @@ class Kitti360(data.Dataset):
         poses = os.listdir(self.pose)
         pose_folders = [os.path.join('/home/bharadwaj/dataset/KITTI-360/data_poses', folder) for folder in poses]
         self.pose_dict = {path.split("/")[-1]:np.loadtxt(path+"/poses.txt") for path in pose_folders}
+
+    def get_weight_vec(self, points_z, percent, array_pcd, axis):
+        thresh = np.quantile(points_z, percent)
+        bottom = array_pcd[:, axis] < thresh
+        top = array_pcd[:, axis] > thresh
+        weights_array = (np.ones((self.npoints)).astype(float)) * 2.0
+        weights_array[bottom] = 1.0 # WEIGHTS FOR BOTTOM 60 %
+        assert(weights_array[top] == 2.0).all()
+        return weights_array
 
     def get_translation_vec(self, model_id, poses):
         '''
@@ -72,8 +83,10 @@ class Kitti360(data.Dataset):
 
         partial = self.read_pcd(os.path.join(self.inp, model_id), center)
         complete = self.read_pcd(os.path.join(self.gt, model_id), center)        
-        # if self.train:
-        #     complete, partial = augment_cloud([complete, partial])           
+        if self.train:
+            complete, partial = augment_cloud([complete, partial]) 
+        if self.weights:
+            model_id = self.get_weight_vec(complete[:,2], 0.6, complete, axis=2) #z axis         
         return model_id, partial.astype(np.float32), complete.astype(np.float32)
 
     def __len__(self):

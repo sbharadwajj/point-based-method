@@ -50,5 +50,5 @@
 #cnn_minst.py <model save path> <mnist data path>
 ####
 
-singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python train.py --dataset kitti360 --dataset_path ../../dataset/scripts/4096-8192-kitti360/ --nepoch 6000 --num_points 8192 --num_point_partial 4096 --batchSize 8 --cuda True --message overfit --featTransform True
+singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python train.py --dataset kitti360 --dataset_path ../../dataset/scripts/4096-8192-kitti360/ --nepoch 300 --save_net 5 --num_points 8192 --num_point_partial 4096 --batchSize 8 --cuda True --message normaCD-z-axis
 echo DONE!
