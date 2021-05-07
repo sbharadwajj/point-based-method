@@ -23,6 +23,7 @@ parser.add_argument('--n_primitives', type=int, default = 16,  help='number of s
 parser.add_argument('--env', type=str, default ="MSN_TRAIN"   ,  help='visdom environment')
 parser.add_argument('--cuda', type=bool, default = False   ,  help='if running on cuda')
 parser.add_argument('--featTransform', type=bool, default = False   ,  help='if using feature transform')
+parser.add_argument('--pointnet', type=bool, default = False   ,  help='if using pointnet encoder')
 parser.add_argument('--message', type=str, default = "training"   ,  help='specs of nw')
 
 
@@ -30,8 +31,8 @@ opt = parser.parse_args()
 print (opt)
 
 # networks
-if opt.num_points != 8192:
-    network = PointNetCls(feature_transform=opt.featTransform)
+if opt.pointnet:
+    network = PointNetPlus_8k(opt.batchSize)
 else:
     network = PointNetCls_8k(feature_transform=opt.featTransform)
 if opt.cuda:
@@ -111,4 +112,4 @@ with torch.no_grad():
 
 
     name = opt.model.split("/")[-1]
-    np.savez(name.split(".")[0] + "weightedCD-both.npz", predictions=pred.cpu().numpy(), data=partial.cpu().numpy(), gt=gt.cpu().numpy())
+    np.savez(name.split(".")[0] + "normalCDpointnet++.npz", predictions=pred.cpu().numpy(), data=partial.cpu().numpy(), gt=gt.cpu().numpy())

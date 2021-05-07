@@ -11,7 +11,7 @@
 #SBATCH --cpus-per-task=3
 # the job can use and see 4 CPUs (from max 24).
 
-#SBATCH --partition=day
+#SBATCH --partition=week
 # the slurm partition the job is queued to.
 
 #SBATCH --mem-per-cpu=4G
@@ -20,16 +20,16 @@
 #SBATCH --gres=gpu:1
 #the job can use and see 1 GPUs (4 GPUs are available in total on one node)
 
-#SBATCH --time=23:00:00
+#SBATCH --time=95:00:00
 # the maximum time the scripts needs to run
 # "minutes:seconds", "hours:minutes:seconds", "days-hours", "days-hours:minutes" and "days-hours:minutes:seconds"
 
 
 
-#SBATCH --error=job_files/overfit-8.%J.err
+#SBATCH --error=job_files/fullimg8k.%J.err
 # write the error output to trainencoder.*jobID*.err
 
-#SBATCH --output=job_files/overfit-8.%J.out
+#SBATCH --output=job_files/fullimg8k.%J.out
 # write the standard output to trainencoder.*jobID*.out
 
 #SBATCH --mail-type=ALL
@@ -50,5 +50,5 @@
 #cnn_minst.py <model save path> <mnist data path>
 ####
 
-singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python train.py --dataset kitti360 --dataset_path ../../dataset/scripts/4096-8192-kitti360/ --nepoch 300 --save_net 5 --num_points 8192 --num_point_partial 4096 --batchSize 8 --cuda True --message normaCD-z-axis
+singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python train.py --dataset kitti360 --dataset_path ../../dataset/scripts/4096-8192-kitti360/ --nepoch 1000 --save_net 50 --num_points 8192 --num_point_partial 4096 --batchSize 8 --cuda True --message pointnet-full-train --pointnet True
 echo DONE!

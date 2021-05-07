@@ -21,14 +21,14 @@ class Kitti360(data.Dataset):
             self.X = os.listdir(self.inp)
             self.Y = os.listdir(self.gt)
 
-            # sort_y = sorted(self.Y)[0::2000] # choose 10
-            # self.Y = sort_y
+            sort_y = sorted(self.Y)[0::2000] # choose 10
+            self.Y = sort_y
             self.len = len(self.Y)
         else:
             self.inp = os.path.join(dataset_path, "val", "partial")
             self.gt = os.path.join(dataset_path, "val", "gt")
             self.X = os.listdir(self.inp)
-            self.Y = os.listdir(self.gt)[:2000]
+            self.Y = os.listdir(self.gt)[:1000]
             # sort_y = sorted(self.Y)[0::2000] # choose the 100th one
             # print(sort_y)
             # self.Y = sort_y

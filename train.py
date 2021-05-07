@@ -1,4 +1,3 @@
-# import open3d as o3d
 import argparse
 import random
 import numpy as np
@@ -16,8 +15,6 @@ import time, datetime
 from time import time
 from pytorch3d.loss import chamfer_distance
 from chamfer_torch import chamfer_distance_reduce
-# sys.path.append('/home/bharadwaj/implementations/baseline1-torch')
-# from chamfer_distance import ChamferDistance
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--batchSize', type=int, default=8, help='input batch size')
@@ -34,20 +31,21 @@ parser.add_argument('--env', type=str, default ="KITTI360"   ,  help='visdom env
 parser.add_argument('--cuda', type=bool, default = False   ,  help='if running on cuda')
 parser.add_argument('--featTransform', type=bool, default = False   ,  help='if using feature transform')
 parser.add_argument('--weightedCD', type=bool, default = False   ,  help='if using weighted CD')
-parser.add_argument('--message', type=str, default = "training"   ,  help='specs of nw')
+parser.add_argument('--pointnetPlus', type=bool, default = False   ,  help='if using pointnetPlus encoder')
+parser.add_argument('--save_folder_name', type=str, default = "pointnetPlus"   ,  help='specs of nw')
 
 
 opt = parser.parse_args()
 print (opt)
 
 now = datetime.datetime.now()
-save_path = 'normalCD-fullData-DataAug-z-axis-2' + now.isoformat()
-if not os.path.exists('./log_kitti360/'):
-    os.mkdir('./log_kitti360/')
-dir_name =  os.path.join('log_kitti360', save_path)
+save_path = opt.save_folder + now.isoformat()
+if not os.path.exists('./final_training/'):
+    os.mkdir('./final_training/')
+dir_name =  os.path.join('final_training', save_path)
 if not os.path.exists(dir_name):
     os.mkdir(dir_name)
-logname = os.path.join(dir_name, 'log_kitti360.txt')
+logname = os.path.join(dir_name, 'final_training.txt')
 os.system('cp ./train.py %s' % dir_name)
 os.system('cp ./dataset.py %s' % dir_name)
 os.system('cp ./model.py %s' % dir_name)
@@ -72,8 +70,8 @@ len_dataset = len(dataset)
 print("Train Set Size: ", len_dataset)
 
 # networks
-if opt.num_points != 8192:
-    network = PointNetCls(feature_transform=opt.featTransform)
+if opt.pointnetPlus:
+    network = PointNetPlus_8k(opt.batchSize)
 else:
     network = PointNetCls_8k(feature_transform=opt.featTransform)
 
@@ -86,12 +84,12 @@ if opt.model != '':
     print("Previous weight loaded ")
 
 # optimizer
-lrate = 0.00001 #learning rate
+lrate = 0.0001 #learning rate
 optimizer = optim.Adam(network.parameters(), lr = lrate, weight_decay=0.001)
-# scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=1000, gamma=0.1)
-writer = SummaryWriter(os.path.join('log_kitti360', save_path, 'logs'))
+scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=250, gamma=0.1)
+writer = SummaryWriter(os.path.join('final_training', save_path, 'logs'))
 
-# chamferDist = ChamferDistance()
+
 train_loss = AverageValueMeter()
 val_loss = AverageValueMeter()
 with open(logname, 'a') as f: #open and append
@@ -135,12 +133,15 @@ for epoch in range(opt.nepoch):
                 weights_array_gt = weights_array_gt.cuda()
                 weights_array_pred = torch.from_numpy(weights_array_pred).cuda()
             loss_normal, dist2, chamx, chamy = chamfer_distance_reduce(gt, pred)
-            cham_x = (chamx * weights_array_gt).sum(1) 
+            cham_x = (chamx * weights_array_gt).sum(1)
+            cham_x /= opt.num_points
             cham_y = (chamy * weights_array_pred).sum(1)
-            loss_net = cham_x.sum() + cham_y.sum()
+            cham_y /= opt.num_points
+            loss = cham_x.sum() + cham_y.sum()
+            loss_net = loss * 100
         else:
             loss, dist2 = chamfer_distance(gt, pred)
-            loss_net = (loss/2.0) * 10
+            loss_net = (loss/2.0) * 1000
 
         loss_net.backward()
 
@@ -181,8 +182,10 @@ for epoch in range(opt.nepoch):
                         weights_array_pred = torch.from_numpy(weights_array_pred).cuda()
                     loss_normal, dist2, chamx, chamy = chamfer_distance_reduce(gt, pred)
                     cham_x = (chamx * weights_array_gt).sum(1) 
+                    cham_x /= opt.num_points
                     cham_y = (chamy * weights_array_pred).sum(1)
-                    loss_net = cham_x.sum() + cham_y.sum() # MAKE IT MEAN
+                    cham_y /= opt.num_points
+                    loss_net = cham_x.sum() + cham_y.sum()
                 else:
                     loss, dist2 = chamfer_distance(gt, pred)
                     loss_net = (loss/2.0) * 1000
@@ -208,7 +211,7 @@ for epoch in range(opt.nepoch):
     with open(logname, 'a') as f: 
         f.write('json_stats: ' + json.dumps(log_table) + '\n')
 
-    # scheduler.step()
+    scheduler.step()
     print('saving net...')
     if epoch % opt.save_net == 0:
         torch.save(network.state_dict(), '%s/network_%d.pth' % (dir_name, epoch))
