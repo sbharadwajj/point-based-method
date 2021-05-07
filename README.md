@@ -2,8 +2,13 @@
 
 
 ### Changes made:
-- added lr scheduler
-- removed feature_transform=True
+- added pointnet plus plus encoder
+- fixed data aug to z-axis
+- added weightedCD for both completeness and accuracy
+- (disabled LR scheduler for now)/ set is at a higher epoch
+- lr 10e5 is slow, but converges
+- weightedCD is now "mean" reduced for point reduction
+- tried feature transform and its bad for our case
 
 
 #### 1) Envrionment & prerequisites
@@ -12,6 +17,12 @@
 - CUDA 10.1
 - Python 3.7
 - chamfer_distance
+
+File descriptions
+
+- chamfer_torch.py - has chamfer loss defined by torch3d
+- data_utils.py - contains data augmentation from completion3d page
+- pointnet2_utils - has the `PointSetAbstraction` required for the encoder of PointNet++
 
 #### 2) Compile
 
@@ -28,3 +39,4 @@ singularity exec [path-to-simg]/torch16-cuda10.simg python [path-to-train.py]tra
 
 Note:
 A folder is created in the default path called 'final_training' and the network weights are saved in them
+
