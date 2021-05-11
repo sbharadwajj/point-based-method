@@ -21,14 +21,15 @@ class Kitti360(data.Dataset):
             self.X = os.listdir(self.inp)
             self.Y = os.listdir(self.gt)
 
-            sort_y = sorted(self.Y)[0::2000] # choose 10
+            # sort_y = sorted(self.Y)[0::2000] # choose 10
+            sort_y = sorted(self.Y)[0::200]
             self.Y = sort_y
             self.len = len(self.Y)
         else:
             self.inp = os.path.join(dataset_path, "val", "partial")
             self.gt = os.path.join(dataset_path, "val", "gt")
             self.X = os.listdir(self.inp)
-            self.Y = os.listdir(self.gt)[:1000]
+            self.Y = os.listdir(self.gt)[:100]
             # sort_y = sorted(self.Y)[0::2000] # choose the 100th one
             # print(sort_y)
             # self.Y = sort_y
@@ -49,9 +50,9 @@ class Kitti360(data.Dataset):
         thresh = np.quantile(points_z, percent)
         bottom = array_pcd[:, axis] < thresh
         top = array_pcd[:, axis] > thresh
-        weights_array = (np.ones((self.npoints)).astype(float)) * 2.0
-        weights_array[bottom] = 1.0 # WEIGHTS FOR BOTTOM 60 %
-        assert(weights_array[top] == 2.0).all()
+        weights_array = (np.ones((self.npoints)).astype(float)) #* 2.0
+        weights_array[bottom] = 0.1 # WEIGHTS FOR BOTTOM 60 %
+        assert(weights_array[top] == 1.0).all()
         return weights_array
 
     def get_translation_vec(self, model_id, poses):
@@ -83,8 +84,8 @@ class Kitti360(data.Dataset):
 
         partial = self.read_pcd(os.path.join(self.inp, model_id), center)
         complete = self.read_pcd(os.path.join(self.gt, model_id), center)        
-        if self.train:
-            complete, partial = augment_cloud([complete, partial]) 
+        # if self.train:
+        #     complete, partial = augment_cloud([complete, partial]) 
         if self.weights:
             model_id = self.get_weight_vec(complete[:,2], 0.6, complete, axis=2) #z axis         
         return model_id, partial.astype(np.float32), complete.astype(np.float32)

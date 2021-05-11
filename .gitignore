@@ -8,3 +8,6 @@ log_kitti360
 preds_fullkitti
 overfit_kitti360
 final_training
+.vscode
+__pycache__
+.DS_Store

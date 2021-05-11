@@ -42,9 +42,10 @@ if opt.cuda:
 
 if opt.cuda:
     network.load_state_dict(torch.load(opt.model, map_location=torch.device('cuda')))
+    print("Previous weight loaded ")
 else:
     network.load_state_dict(torch.load(opt.model, map_location=torch.device('cpu')))
-print("Previous weight loaded ")
+    print("Previous weight loaded ")
 
 network.eval()
 
@@ -112,4 +113,4 @@ with torch.no_grad():
 
 
     name = opt.model.split("/")[-1]
-    np.savez(name.split(".")[0] + "normalCDpointnet++.npz", predictions=pred.cpu().numpy(), data=partial.cpu().numpy(), gt=gt.cpu().numpy())
+    np.savez(name.split(".")[0] + "weighted10-01CDpointnet++overfit.npz", predictions=pred.cpu().numpy(), data=partial.cpu().numpy(), gt=gt.cpu().numpy())

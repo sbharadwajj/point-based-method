@@ -50,5 +50,6 @@
 #cnn_minst.py <model save path> <mnist data path>
 ####
 
-singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python train.py --dataset kitti360 --dataset_path ../../dataset/scripts/4096-8192-kitti360/ --model final_training/weightedCD-full-data-pointnetPlus++2021-05-06T11:32:26.055105/network_80.pth --nepoch 200 --save_net 10 --num_points 8192 --num_point_partial 4096 --batchSize 8 --cuda True --save_folder_name pointnetPlusWeightedCD --pointnetPlus True --weightedCD True
+singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python train.py --dataset kitti360 --dataset_path ../../dataset/scripts/4096-8192-kitti360/ --nepoch 200 --save_net 10 --num_points 8192 --num_point_partial 4096 --batchSize 8 --cuda True --save_folder_name pointnetPlusWeightedCD01-10 --pointnetPlus True --weightedCD True
+# --model final_training/weightedCD-full-data-pointnetPlus++2021-05-06T11:32:26.055105/network_80.pth
 echo DONE!

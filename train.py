@@ -39,13 +39,13 @@ opt = parser.parse_args()
 print (opt)
 
 now = datetime.datetime.now()
-save_path = opt.save_folder + now.isoformat()
-if not os.path.exists('./final_training/'):
-    os.mkdir('./final_training/')
-dir_name =  os.path.join('final_training', save_path)
+save_path = opt.save_folder_name + now.isoformat()
+if not os.path.exists('./overfit_kitti360/'):
+    os.mkdir('./overfit_kitti360/')
+dir_name =  os.path.join('overfit_kitti360', save_path)
 if not os.path.exists(dir_name):
     os.mkdir(dir_name)
-logname = os.path.join(dir_name, 'final_training.txt')
+logname = os.path.join(dir_name, 'overfit_kitti360.txt')
 os.system('cp ./train.py %s' % dir_name)
 os.system('cp ./dataset.py %s' % dir_name)
 os.system('cp ./model.py %s' % dir_name)
@@ -86,15 +86,14 @@ if opt.model != '':
 # optimizer
 lrate = 0.0001 #learning rate
 optimizer = optim.Adam(network.parameters(), lr = lrate, weight_decay=0.001)
-scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=250, gamma=0.1)
-writer = SummaryWriter(os.path.join('final_training', save_path, 'logs'))
+scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=500, gamma=0.1)
+writer = SummaryWriter(os.path.join('overfit_kitti360', save_path, 'logs'))
 
 
 train_loss = AverageValueMeter()
 val_loss = AverageValueMeter()
 with open(logname, 'a') as f: #open and append
         f.write(str(network) + '\n')
-        f.write(opt.message)
 
 train_curve = []
 val_curve = []
@@ -103,9 +102,9 @@ def get_weight_vec(points_z, percent, array_pcd, axis):
     thresh = np.quantile(points_z, percent)
     bottom = array_pcd[:, :, axis] < thresh
     top = array_pcd[:, :, axis] > thresh
-    weights_array = (np.ones((opt.batchSize, opt.num_points)).astype(float)) * 2.0
-    weights_array[bottom] = 1.0 # WEIGHTS FOR BOTTOM 60 %
-    assert(weights_array[top] == 2.0).all()
+    weights_array = (np.ones((opt.batchSize, opt.num_points)).astype(float)) #* 2.0
+    weights_array[bottom] = 0.1 # WEIGHTS FOR BOTTOM 60 %
+    assert(weights_array[top] == 1.0).all()
     return weights_array
 
 for epoch in range(opt.nepoch):
