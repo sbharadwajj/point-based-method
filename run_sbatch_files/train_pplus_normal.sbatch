@@ -50,5 +50,5 @@
 #cnn_minst.py <model save path> <mnist data path>
 ####
 
-singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python train.py --dataset kitti360 --dataset_path ../../dataset/scripts/4096-8192-kitti360/ --model overfit_kitti360/pointnetPlusNormalCD1002021-05-11T22\:26\:27.384187/network_950.pth --nepoch 1000 --save_net 50 --num_points 8192 --num_point_partial 4096 --batchSize 8 --cuda True --save_folder_name pointnetPlusNormalCD100 --pointnetPlus True
+singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python train.py --dataset kitti360 --dataset_path ../../dataset/scripts/4096-8192-kitti360/ --nepoch 150 --save_net 5 --num_points 8192 --num_point_partial 4096 --batchSize 8 --cuda True --pointnetPlus True
 echo DONE!
