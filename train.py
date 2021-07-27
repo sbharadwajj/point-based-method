@@ -40,12 +40,12 @@ print (opt)
 
 now = datetime.datetime.now()
 save_path = opt.save_folder_name + now.isoformat()
-if not os.path.exists('./overfit_kitti360/'):
-    os.mkdir('./overfit_kitti360/')
-dir_name =  os.path.join('overfit_kitti360', save_path)
+if not os.path.exists('./final_training/'):
+    os.mkdir('./final_training/')
+dir_name =  os.path.join('final_training', save_path)
 if not os.path.exists(dir_name):
     os.mkdir(dir_name)
-logname = os.path.join(dir_name, 'overfit_kitti360.txt')
+logname = os.path.join(dir_name, 'final_training.txt')
 os.system('cp ./train.py %s' % dir_name)
 os.system('cp ./dataset.py %s' % dir_name)
 os.system('cp ./model.py %s' % dir_name)
@@ -64,7 +64,7 @@ elif opt.dataset == 'shapenet':
                                             shuffle=True, num_workers=int(opt.workers))
     dataset_test = Shapenet_allCategories(dataset_path=opt.dataset_path, train=False, inp_points=opt.num_point_partial, npoints=opt.num_points)
     dataloader_test = torch.utils.data.DataLoader(dataset_test, batch_size=opt.batchSize,
-                                            shuffle=False, num_workers=int(opt.workers))
+                                            shuffle=False, num_workers=int(opt.workers)) 
 
 len_dataset = len(dataset)
 print("Train Set Size: ", len_dataset)
@@ -84,10 +84,10 @@ if opt.model != '':
     print("Previous weight loaded ")
 
 # optimizer
-lrate = 0.0001 #learning rate
+lrate = 0.00001 #learning rate
 optimizer = optim.Adam(network.parameters(), lr = lrate, weight_decay=0.001)
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=500, gamma=0.1)
-writer = SummaryWriter(os.path.join('overfit_kitti360', save_path, 'logs'))
+writer = SummaryWriter(os.path.join('final_training', save_path, 'logs'))
 
 
 train_loss = AverageValueMeter()
@@ -107,7 +107,7 @@ def get_weight_vec(points_z, percent, array_pcd, axis):
     assert(weights_array[top] == 1.0).all()
     return weights_array
 
-for epoch in range(opt.nepoch):
+for epoch in range(80, opt.nepoch):
     #TRAIN MODE
     train_loss.reset()
     network.train()
@@ -137,6 +137,7 @@ for epoch in range(opt.nepoch):
             cham_y = (chamy * weights_array_pred).sum(1)
             cham_y /= opt.num_points
             loss = cham_x.sum() + cham_y.sum()
+            
             loss_net = loss * 100
         else:
             loss, dist2 = chamfer_distance(gt, pred)

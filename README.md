@@ -1,28 +1,22 @@
-## Baseline for pointcloud extrapolation
-
-
-### Changes made:
-- added pointnet plus plus encoder
-- fixed data aug to z-axis
-- added weightedCD for both completeness and accuracy
-- (disabled LR scheduler for now)/ set is at a higher epoch
-- lr 10e5 is slow, but converges
-- weightedCD is now "mean" reduced for point reduction
-- tried feature transform and its bad for our case
-
+## Point-Based Methods
 
 #### 1) Envrionment & prerequisites
+
+Please check `torch-16-cuda10.recipe` for singuarity recipe to build the environment used for the baseline
 
 - Pytorch 1.6.0
 - CUDA 10.1
 - Python 3.7
 - chamfer_distance
 
+
+
 File descriptions
 
-- chamfer_torch.py - has chamfer loss defined by torch3d
+- chamfer_torch.py: chamfer loss defined by torch3d
 - data_utils.py - contains data augmentation from completion3d page
 - pointnet2_utils - has the `PointSetAbstraction` required for the encoder of PointNet++
+- val_accu_comp - is a validation file that saves pointwise loss to calculate accuracy and completeness later on
 
 #### 2) Compile
 

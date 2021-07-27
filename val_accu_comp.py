@@ -73,11 +73,13 @@ with torch.no_grad():
     partial_list = []
     gt_list = []
     pred_list = []
+    accu_list = []
+    comp_list = []
 
     # global_feat_list = []
     
     val_loss = AverageValueMeter()
-    for i, data in enumerate(dataloader_test, 0):
+    for i, data in enumerate(dataloader, 0):
         id, partial, gt = data
         partial = partial #.float()#.cuda()
         gt = gt #.float()#.cuda()
@@ -92,29 +94,29 @@ with torch.no_grad():
 
         loss_nodecay = (loss/2.0) * 1000
 
-        if opt.featTransform:
-            loss_net = loss_nodecay + feature_transform_regularizer(trans_feat) * 0.001
-            '''
-            used from https://github.com/yanx27/Pointnet_Pointnet2_pytorch/blob/ba4c5cf3a1e2b735d696c59a43c38345c3d003b9/models/pointnet_cls.py#L39
-            '''
-        else:
-            loss_net = loss_nodecay
+        # np.savez("epoch_5950_completeness+accuracy_2013_05_28_drive_0009_sync_001951_002126_1956_overfitweightedCD.npz", predictions=pred.cpu().numpy(), data=partial.cpu().numpy(), gt=gt.cpu().numpy(), chamx=cham_x.cpu().numpy(), chamy=cham_y.cpu().numpy())
+        # break
+
+        loss_net = loss_nodecay
 
         partial_list.append(partial)
         gt_list.append(gt)
         pred_list.append(pred)
+        accu_list.append(cham_y)
+        comp_list.append(cham_x)
+        # global_feat_list.append(global_feat)
         print(loss_nodecay)
         print(loss)
         val_loss.update(loss_net.detach().cpu().item())
 
-    print("val loss avg:",val_loss.avg) 
+    print("val loss avg:",val_loss.avg*100) 
     partial = torch.cat(partial_list, 0)
     gt = torch.cat(gt_list, 0)
     pred = torch.cat(pred_list, 0)
+    accu = torch.cat(accu_list, 0)
+    comp = torch.cat(comp_list, 0)
+    # global_feats = torch.cat(global_feat_list, 0)
+
 
     name = opt.model.split("/")[-1]
-
-    '''
-    saves file as NPZ 
-    '''
-    np.savez(name.split(".")[0] + "VAL_SET.npz", predictions=pred.cpu().numpy(), data=partial.cpu().numpy(), gt=gt.cpu().numpy())
+    np.savez(name.split(".")[0] + "p++overfit.npz", predictions=pred.cpu().numpy(), data=partial.cpu().numpy(), gt=gt.cpu().numpy(), chamx=comp.cpu().numpy(), chamy=accu.cpu().numpy())

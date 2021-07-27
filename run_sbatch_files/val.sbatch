@@ -50,5 +50,5 @@
 #cnn_minst.py <model save path> <mnist data path>
 ####
 
-singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python val.py --dataset_path ../../dataset/scripts/4096-8192-kitti360/ --model log_kitti360/kitti360-full-dataset-NoDatAug-pt-gt2021-04-29T13\:46\:13.782757/network_54.pth --num_points 8192 --cuda True
+singularity exec /home/bharadwaj/envi/torch16-cuda10.simg python val.py --dataset_path ../../dataset/scripts/4096-8192-kitti360/ --model final_training/pnormalCD/network_69.pth  --num_points 8192 --cuda True
 echo DONE!

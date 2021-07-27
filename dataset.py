@@ -21,17 +21,16 @@ class Kitti360(data.Dataset):
             self.X = os.listdir(self.inp)
             self.Y = os.listdir(self.gt)
 
-            # sort_y = sorted(self.Y)[0::2000] # choose 10
-            sort_y = sorted(self.Y)[0::200]
+            # sort_y = sorted(self.Y)[0::2000] # choose 10 for visualization
+            # sort_y = sorted(self.Y)[0::200]
             self.Y = sort_y
             self.len = len(self.Y)
         else:
             self.inp = os.path.join(dataset_path, "val", "partial")
             self.gt = os.path.join(dataset_path, "val", "gt")
             self.X = os.listdir(self.inp)
-            self.Y = os.listdir(self.gt)[:100]
-            # sort_y = sorted(self.Y)[0::2000] # choose the 100th one
-            # print(sort_y)
+            self.Y = os.listdir(self.gt)
+            # sort_y = sorted(self.Y)[0::200] # choose for visualization
             # self.Y = sort_y
             self.len = len(self.Y)
 
@@ -76,103 +75,21 @@ class Kitti360(data.Dataset):
 
     def __getitem__(self, index):        
         model_id = self.Y[index] 
-        
         split_list = model_id.split("_") 
         file_name = split_list[-1].split(".")[0]
         drive_name =  "_".join(split_list[:6])
         center = self.get_translation_vec(file_name, self.pose_dict[drive_name]).transpose()
 
         partial = self.read_pcd(os.path.join(self.inp, model_id), center)
-        complete = self.read_pcd(os.path.join(self.gt, model_id), center)        
-        # if self.train:
-        #     complete, partial = augment_cloud([complete, partial]) 
+        complete = self.read_pcd(os.path.join(self.gt, model_id), center)
+
+        # DATA AUGMENTATION   
+        if self.train:
+            complete, partial = augment_cloud([complete, partial]) 
+
         if self.weights:
             model_id = self.get_weight_vec(complete[:,2], 0.6, complete, axis=2) #z axis         
         return model_id, partial.astype(np.float32), complete.astype(np.float32)
 
-    def __len__(self):
-        return self.len
-
-class Shapenet(data.Dataset): 
-    def __init__(self, dataset_path, train = True, inp_points=1024 , npoints = 2048):
-        self.train = train
-        self.inp_points = inp_points
-        self.npoints = npoints
-        if self.train:
-            # train on a single category to test
-            self.inp = os.path.join(dataset_path, "train", "partial")
-            self.gt = os.path.join(dataset_path, "train", "gt")
-            self.X = os.listdir(self.inp)
-            self.Y = os.listdir(self.gt)
-            self.len = len(os.listdir(self.inp))
-        else:
-            self.inp = os.path.join(dataset_path, "val", "partial")
-            self.gt = os.path.join(dataset_path, "val", "gt")
-            self.X = os.listdir(self.inp)
-            self.Y = os.listdir(self.gt)
-            self.len = len(os.listdir(self.inp))
-        self.npoints = npoints
-
-    def get_pair(self, fname, train):
-        partial = load_h5(os.path.join(self.inp, fname))
-        gtpts = load_h5(os.path.join(self.gt, fname))
-        partial  = pad_cloudN(partial, self.inp_points)
-        return partial, gtpts
-
-    def load_data(self, fname):
-        pair = self.get_pair(fname, train=self.train == 'train')
-        partial = pair[0].T
-        target = pair[1]
-        cloud_meta = ['{}.{:d}'.format('/'.join(fname.split('/')[-2:]),0),]
-        return cloud_meta, partial, target
-
-    def __getitem__(self, index):
-        model_id = self.X[index]
-        return self.load_data(model_id)
-    
-    def __len__(self):
-        return self.len
-
-class Shapenet_allCategories(data.Dataset): 
-    def __init__(self, dataset_path, train = True, inp_points=1024 , npoints = 2048):
-        self.train = train
-        self.inp_points = inp_points
-        self.npoints = npoints
-        if self.train:
-            self.inp = os.path.join(dataset_path, "train", "partial")
-            self.gt = os.path.join(dataset_path, "train", "gt")
-            self.data_paths = sorted([os.path.join(dataset_path, 'train', 'partial', k.rstrip()+ '.h5') for k in open(os.path.join(dataset_path, 'train.list')).readlines()])
-            self.len = len(self.data_paths)
-        else:
-            self.inp = os.path.join(dataset_path, "val", "partial")
-            self.gt = os.path.join(dataset_path, "val", "gt")
-            self.data_paths = sorted([os.path.join(dataset_path, 'val', 'partial', k.rstrip()+ '.h5') for k in open(os.path.join(dataset_path, 'val.list')).readlines()])
-            self.X = os.listdir(self.inp)
-            self.Y = os.listdir(self.gt)
-            self.len = len(self.data_paths)
-        self.npoints = npoints
-
-    def get_pair(self, fname, train):
-        folder = fname.split("/")[-2]
-        name = fname.split("/")[-1]
-        partial = load_h5(os.path.join(self.inp, folder, name))
-        gtpts = load_h5(os.path.join(self.gt, folder, name))
-        # FIX CODE AND ADD AUGMENTATION
-        if train:
-            gtpts, partial = augment_cloud([gtpts, partial])
-        partial  = pad_cloudN(partial, self.inp_points)
-        return partial, gtpts
-
-    def load_data(self, fname):
-        pair = self.get_pair(fname, train=self.train == 'train')
-        partial = pair[0].T
-        target = pair[1]
-        cloud_meta = ['{}.{:d}'.format('/'.join(fname.split('/')[-2:]),0),]
-        return cloud_meta, partial, target
-
-    def __getitem__(self, index):
-        model_id = self.data_paths[index]
-        return self.load_data(model_id)
-    
     def __len__(self):
         return self.len
