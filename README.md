@@ -1,5 +1,7 @@
 ## Point-Based Methods
 
+This repository contains a Point-Based Method that is evaluated on KITTI-360
+
 #### 1) Envrionment & prerequisites
 
 Please check `torch-16-cuda10.recipe` for singuarity recipe to build the environment used for the baseline
@@ -34,6 +36,6 @@ singularity exec [path-to-simg]/torch16-cuda10.simg python [path-to-train.py]tra
 2. For PointNet++ with weighted CD run `run_sbatch_files/train_pplus_weighted.sbatch` and make similar changes as above
 
 Note:
-- A folder is created in the default path called 'final_training' and the network weights are saved in them
+- A folder is created in the default path called `final_training` and the network weights are saved in them
 - Master branch contains the final code used for all the experiments
 
