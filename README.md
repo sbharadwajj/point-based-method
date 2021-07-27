@@ -34,5 +34,6 @@ singularity exec [path-to-simg]/torch16-cuda10.simg python [path-to-train.py]tra
 2. For PointNet++ with weighted CD run `run_sbatch_files/train_pplus_weighted.sbatch` and make similar changes as above
 
 Note:
-A folder is created in the default path called 'final_training' and the network weights are saved in them
+- A folder is created in the default path called 'final_training' and the network weights are saved in them
+- Master branch contains the final code used for all the experiments
 

@@ -8,7 +8,7 @@ from torch.utils.tensorboard import SummaryWriter
 import sys
 from dataset import *
 from model import *
-from utils import *
+from utils.train_utils import *
 import os
 import json
 import time, datetime

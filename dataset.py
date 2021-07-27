@@ -6,7 +6,7 @@ import torchvision.transforms as transforms
 import os
 import random
 
-from data_utils import load_h5, pad_cloudN, augment_cloud
+from utils.data_utils import load_h5, pad_cloudN, augment_cloud
 #from utils import *
 
            

@@ -7,7 +7,7 @@ from torch.autograd import Variable
 import numpy as np
 import torch.nn.functional as F
 
-from pointnet2_utils import PointNetSetAbstraction,PointNetFeaturePropagation
+from utils.pointnet2_utils import PointNetSetAbstraction,PointNetFeaturePropagation
 
 class STNkd(nn.Module):
     def __init__(self, k=64):
@@ -147,7 +147,8 @@ class PointNetCls(nn.Module):
         x = torch.tanh(self.fc3(x))
         x = x.view(-1, 2048, 3)
         return x, trans, trans_feat
-        
+
+################################### POINTNET-8k output cloud #################################################################        
 class PointNetCls_8k(nn.Module):
     def __init__(self, k=2, feature_transform=False):
         super(PointNetCls_8k, self).__init__()
@@ -178,6 +179,7 @@ class PointNetCls_8k(nn.Module):
         x = x.view(-1, 8192, 3)
         return x, global_feat, trans_feat
 
+################################### POINTNET++ 8k output cloud #################################################################
 class PointNetPlus_8k(nn.Module):
     def __init__(self, batchsize=8):
         super(PointNetPlus_8k, self).__init__()
