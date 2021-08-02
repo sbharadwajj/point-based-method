@@ -1,9 +1,9 @@
 '''
 run:
-`python utils-avg/pointcloud/create_train_pair.py 2013_05_28_drive_train_only.txt path_fused_cloud save_folder radius pose_folder save`
+`python utils-avg/pointcloud/create_train_pair.py 2013_05_28_drive_train_only.txt path_fused_cloud save_folder radius pose_folder path_sparse_cloud save`
 
 example:
-`python utils-avg/pointcloud/create_train_pair.py 2013_05_28_drive_train_only.txt data_3d_semantics/ baseline_data/train_fused/ 70 data_poses/ save`
+`python utils-avg/pointcloud/create_train_pair.py 2013_05_28_drive_train_only.txt data_3d_semantics/ baseline_data/train_fused/ 70 data_poses/ train_sparse/ save`
 
 my code
 python3 create_train_pair.py 2013_05_28_drive_train_only.txt ../data_3d_semantics/ 4096-8192-kitti360/train 70 ../KITTI-360/data_poses/ ../final_training/train_partial/ save train_list.txt
